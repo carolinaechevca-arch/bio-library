@@ -20,9 +20,9 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -75,8 +75,7 @@ public class StudentController {
 
     @Operation(
             summary = "List students",
-            description = "Returns a paginated list of students, optionally filtered by university. " +
-                    "Supports sorting via ?sort=gpa,desc or ?sort=carnet,asc. Requires ADMIN role."
+            description = "Returns a paginated list of students, optionally filtered by university. Requires ADMIN role."
     )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Paginated list of students"),
@@ -90,14 +89,24 @@ public class StudentController {
     public ResponseEntity<Page<StudentResponse>> getStudents(
             @Parameter(description = "Filter by university enum value (e.g. ITM, UNIVERSIDAD_NACIONAL)")
             @RequestParam(required = false) String university,
-            @PageableDefault(size = 10, sort = "carnet", direction = Sort.Direction.ASC) Pageable pageable) {
+            @Parameter(description = "Page number (0-based)", example = "0")
+            @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "Page size", example = "10")
+            @RequestParam(defaultValue = "10") int size,
+            @Parameter(description = "Field to sort by (carnet, gpa, user.name, user.lastName)", example = "carnet")
+            @RequestParam(defaultValue = "carnet") String sortBy,
+            @Parameter(description = "Sort direction: asc or desc", example = "asc")
+            @RequestParam(defaultValue = "asc") String sortDir) {
 
         University uni = Optional.ofNullable(university)
                 .map(u -> University.valueOf(u.toUpperCase()))
                 .orElse(null);
 
-        log.info("[LIST] GET /students university={} page={} size={}",
-                university, pageable.getPageNumber(), pageable.getPageSize());
+        Sort sort = Sort.by(sortDir.equalsIgnoreCase("desc") ? Sort.Direction.DESC : Sort.Direction.ASC, sortBy);
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        log.info("[LIST] GET /students university={} page={} size={} sortBy={} sortDir={}",
+                university, page, size, sortBy, sortDir);
 
         return ResponseEntity.ok(studentServicePort.getStudents(uni, pageable).map(mapper::toResponse));
     }

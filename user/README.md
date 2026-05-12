@@ -213,14 +213,13 @@ Lista paginada de estudiantes con filtro y ordenamiento. Requiere rol **ADMIN**.
 
 **Query params**
 
-| Parámetro | Tipo | Requerido | Descripción |
-|---|---|---|---|
-| `university` | String | No | Filtra por valor del enum `University` (e.g. `ITM`) |
-| `page` | Integer | No | Número de página (default `0`) |
-| `size` | Integer | No | Elementos por página (default `10`) |
-| `sort` | String | No | Campo y dirección (e.g. `gpa,desc` o `carnet,asc`) |
-
-Campos ordenables: `carnet`, `gpa`, `user.name`, `user.lastName`.
+| Parámetro | Tipo | Requerido | Default | Descripción |
+|---|---|---|---|---|
+| `university` | String | No | — | Filtra por valor del enum `University` (e.g. `ITM`) |
+| `page` | Integer | No | `0` | Número de página (0-based) |
+| `size` | Integer | No | `10` | Elementos por página |
+| `sortBy` | String | No | `carnet` | Campo de ordenamiento: `carnet`, `gpa`, `user.name`, `user.lastName` |
+| `sortDir` | String | No | `asc` | Dirección: `asc` o `desc` |
 
 **Curl**
 
@@ -230,7 +229,7 @@ curl -X GET "http://localhost:8080/api/v1/students?page=0&size=10" \
   -H "Authorization: Bearer <token>"
 
 # Filtrados por universidad, ordenados por GPA descendente
-curl -X GET "http://localhost:8080/api/v1/students?university=ITM&sort=gpa,desc" \
+curl -X GET "http://localhost:8080/api/v1/students?university=ITM&sortBy=gpa&sortDir=desc" \
   -H "Authorization: Bearer <token>"
 ```
 
