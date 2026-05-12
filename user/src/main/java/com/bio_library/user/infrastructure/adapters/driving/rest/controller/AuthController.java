@@ -4,6 +4,7 @@ import com.bio_library.user.application.ports.in.IAuthServicePort;
 import com.bio_library.user.domain.model.AuthResponseModel;
 import com.bio_library.user.infrastructure.adapters.driving.rest.dto.request.AuthRequestDto;
 import com.bio_library.user.infrastructure.adapters.driving.rest.dto.response.AuthResponseDto;
+import com.bio_library.user.infrastructure.adapters.driving.rest.dto.response.ExceptionResponse;
 import com.bio_library.user.infrastructure.adapters.driving.rest.mapper.IAuthDtoMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -38,8 +39,10 @@ public class AuthController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Authentication successful",
                     content = @Content(schema = @Schema(implementation = AuthResponseDto.class))),
-            @ApiResponse(responseCode = "400", description = "Invalid request data", content = @Content),
-            @ApiResponse(responseCode = "401", description = "Invalid credentials", content = @Content)
+            @ApiResponse(responseCode = "400", description = "Invalid request data",
+                    content = @Content(schema = @Schema(implementation = ExceptionResponse.class))),
+            @ApiResponse(responseCode = "401", description = "Invalid credentials",
+                    content = @Content(schema = @Schema(implementation = ExceptionResponse.class)))
     })
     public ResponseEntity<AuthResponseDto> login(
             @RequestBody(
