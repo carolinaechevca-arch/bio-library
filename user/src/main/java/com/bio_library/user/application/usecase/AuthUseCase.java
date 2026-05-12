@@ -13,6 +13,8 @@ import com.bio_library.user.domain.model.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.Optional;
+
 import static com.bio_library.user.domain.constants.AuthConstants.INVALID_CREDENTIALS_EXCEPTION_MESSAGE;
 
 
@@ -29,35 +31,42 @@ public class AuthUseCase implements IAuthServicePort {
     public AuthResponseModel authenticate(AuthenticationModel auth) {
         log.info("[USE-CASE] Authenticating user: {}", auth.email());
 
-        User user = userPersistencePort.findByEmail(auth.email());
-        if (user == null) {
-            log.warn("[USE-CASE] User not found: {}", auth.email());
-            throw new InvalidCredentialsException(INVALID_CREDENTIALS_EXCEPTION_MESSAGE);
-        }
-
-        log.info("[USE-CASE] User found for email: {}", auth.email());
-
-        if (!passwordEncoder.matches(auth.password(), user.getPassword())) {
-            log.warn("[USE-CASE] Invalid password for user: {}", auth.email());
-            throw new InvalidCredentialsException(INVALID_CREDENTIALS_EXCEPTION_MESSAGE);
-        }
+        User user = resolveUser(auth.email());
+        validatePassword(auth.password(), user);
 
         log.info("[USE-CASE] Credentials validated successfully for userId={}, role={}", user.getId(), user.getRole());
 
-        Double gpa = null;
-        if (Role.STUDENT.equals(user.getRole())) {
-            gpa = studentPersistencePort.findGpaByUserId(user.getId());
-            log.info("[USE-CASE] GPA retrieved for studentId={}: {}", user.getId(), gpa);
-        }
-
-        String accessToken = jwtPort.generateAccessToken(user.getEmail(), user.getId(), user.getRole().name(), gpa);
-
-        log.info("[USE-CASE] User authenticated successfully: {}", auth.email());
-
-        return new AuthResponseModel(
-                accessToken,
-                "Bearer",
+        return AuthResponseModel.of(
+                jwtPort.generateAccessToken(user.getEmail(), user.getId(), user.getRole().name(), resolveGpa(user)),
                 jwtPort.getAccessExpirationTime()
         );
+    }
+
+    private User resolveUser(String email) {
+        return Optional.ofNullable(userPersistencePort.findByEmail(email))
+                .orElseThrow(() -> {
+                    log.warn("[USE-CASE] User not found: {}", email);
+                    return new InvalidCredentialsException(INVALID_CREDENTIALS_EXCEPTION_MESSAGE);
+                });
+    }
+
+    private void validatePassword(String rawPassword, User user) {
+        Optional.of(rawPassword)
+                .filter(pwd -> passwordEncoder.matches(pwd, user.getPassword()))
+                .orElseThrow(() -> {
+                    log.warn("[USE-CASE] Invalid password for user: {}", user.getEmail());
+                    return new InvalidCredentialsException(INVALID_CREDENTIALS_EXCEPTION_MESSAGE);
+                });
+    }
+
+    private Double resolveGpa(User user) {
+        return Optional.of(user.getRole())
+                .filter(Role.STUDENT::equals)
+                .map(__ -> {
+                    Double gpa = studentPersistencePort.findGpaByUserId(user.getId());
+                    log.info("[USE-CASE] GPA retrieved for studentId={}: {}", user.getId(), gpa);
+                    return gpa;
+                })
+                .orElse(null);
     }
 }

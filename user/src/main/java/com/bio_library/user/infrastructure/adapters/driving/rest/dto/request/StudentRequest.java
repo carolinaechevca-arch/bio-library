@@ -5,9 +5,11 @@ import com.bio_library.user.infrastructure.adapters.driving.rest.validation.Vali
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import lombok.Builder;
 
 import static com.bio_library.user.domain.constants.StudentConstants.*;
 
+@Builder
 public record StudentRequest(
 
         @NotBlank(message = CARNET_REQUIRED_EXCEPTION_MESSAGE)

@@ -8,4 +8,11 @@ public record AuthResponseModel(
         String tokenType,
         Long accessExpirationTime
 ) {
+    public static AuthResponseModel of(String accessToken, Long accessExpirationTime) {
+        return AuthResponseModel.builder()
+                .accessToken(accessToken)
+                .tokenType("Bearer")
+                .accessExpirationTime(accessExpirationTime)
+                .build();
+    }
 }

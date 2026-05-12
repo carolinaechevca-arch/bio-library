@@ -13,4 +13,6 @@ public final class PersistenceConstants {
     public static final String USER_FIND_BY_EMAIL = "[DB] Looking up user by email: {}";
     public static final String USER_FOUND = "[DB] User found: {}";
     public static final String USER_NOT_FOUND = "[DB] User not found: {}";
+    public static final String STUDENT_FIND_ALL = "[DB] Listing students university={}";
+    public static final String STUDENT_UPDATE_SANCTION = "[DB] Updating sanction for userId={}";
 }

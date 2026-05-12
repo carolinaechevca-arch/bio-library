@@ -9,6 +9,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.util.Optional;
+
 import static com.bio_library.user.infrastructure.adapters.driven.util.PersistenceConstants.*;
 
 @Slf4j
@@ -22,12 +24,14 @@ public class UserPersistenceAdapter implements IUserPersistencePort {
     @Override
     public User findByEmail(String email) {
         log.info(USER_FIND_BY_EMAIL, email);
-        UserEntity entity = userRepository.findByEmail(email);
-        if (entity == null) {
-            log.warn(USER_NOT_FOUND, email);
-            return null;
-        }
-        log.info(USER_FOUND, email);
-        return userEntityMapper.toDomain(entity);
+        return Optional.ofNullable(userRepository.findByEmail(email))
+                .map(entity -> {
+                    log.info(USER_FOUND, email);
+                    return userEntityMapper.toDomain(entity);
+                })
+                .orElseGet(() -> {
+                    log.warn(USER_NOT_FOUND, email);
+                    return null;
+                });
     }
 }

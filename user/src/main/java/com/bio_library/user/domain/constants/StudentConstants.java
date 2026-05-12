@@ -27,4 +27,6 @@ public class StudentConstants {
 
     public static final String UNIVERSITY_REQUIRED_EXCEPTION_MESSAGE = "University is required.";
     public static final String UNIVERSITY_INVALID_EXCEPTION_MESSAGE = "The provided university is not valid.";
+
+    public static final String SANCTION_ACTIVE_REQUIRED_MESSAGE = "The 'active' field is required.";
 }

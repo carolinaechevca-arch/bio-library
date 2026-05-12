@@ -139,6 +139,212 @@ curl -X POST "http://localhost:8080/api/v1/auth/login" \
 
 ---
 
+### GET `/api/v1/auth/me`
+
+Retorna el perfil del usuario autenticado. Disponible para **ADMIN** y **STUDENT**.
+
+**Header requerido:** `Authorization: Bearer <token>`
+
+**Curl**
+
+```bash
+curl -X GET "http://localhost:8080/api/v1/auth/me" \
+  -H "Authorization: Bearer <token>"
+```
+
+**Response 200 — Usuario STUDENT**
+
+```json
+{
+  "id": 1,
+  "dni": "1020100001",
+  "name": "Carlos",
+  "lastName": "García",
+  "email": "carlos.garcia@itm.edu.co",
+  "phoneNumber": "+573012345678",
+  "role": "STUDENT",
+  "university": "ITM",
+  "carnet": "20210001",
+  "gpa": 3.8,
+  "hasSanction": false,
+  "sanctionEndDate": null,
+  "activeLoans": 0
+}
+```
+
+**Response 200 — Usuario ADMIN**
+
+```json
+{
+  "id": 5,
+  "dni": "9999999999",
+  "name": "Admin",
+  "lastName": "ITM",
+  "email": "admin@itm.edu.co",
+  "phoneNumber": null,
+  "role": "ADMIN",
+  "university": "ITM",
+  "carnet": null,
+  "gpa": null,
+  "hasSanction": null,
+  "sanctionEndDate": null,
+  "activeLoans": null
+}
+```
+
+**Response 401 — Token ausente o inválido**
+
+```json
+{
+  "message": "Authentication is required to access this resource.",
+  "status": "Unauthorized",
+  "timestamp": "2026-05-12T10:00:00",
+  "code": 401
+}
+```
+
+---
+
+### GET `/api/v1/students`
+
+Lista paginada de estudiantes con filtro y ordenamiento. Requiere rol **ADMIN**.
+
+**Header requerido:** `Authorization: Bearer <token>`
+
+**Query params**
+
+| Parámetro | Tipo | Requerido | Descripción |
+|---|---|---|---|
+| `university` | String | No | Filtra por valor del enum `University` (e.g. `ITM`) |
+| `page` | Integer | No | Número de página (default `0`) |
+| `size` | Integer | No | Elementos por página (default `10`) |
+| `sort` | String | No | Campo y dirección (e.g. `gpa,desc` o `carnet,asc`) |
+
+Campos ordenables: `carnet`, `gpa`, `user.name`, `user.lastName`.
+
+**Curl**
+
+```bash
+# Todos los estudiantes, página 0
+curl -X GET "http://localhost:8080/api/v1/students?page=0&size=10" \
+  -H "Authorization: Bearer <token>"
+
+# Filtrados por universidad, ordenados por GPA descendente
+curl -X GET "http://localhost:8080/api/v1/students?university=ITM&sort=gpa,desc" \
+  -H "Authorization: Bearer <token>"
+```
+
+**Response 200**
+
+```json
+{
+  "content": [ { "id": 1, "carnet": "20210001", "gpa": 3.8, ... } ],
+  "totalElements": 42,
+  "totalPages": 5,
+  "number": 0,
+  "size": 10
+}
+```
+
+---
+
+### GET `/api/v1/students/{id}`
+
+Retorna el perfil completo de un estudiante por su ID de usuario. Requiere rol **ADMIN**.
+
+**Header requerido:** `Authorization: Bearer <token>`
+
+**Curl**
+
+```bash
+curl -X GET "http://localhost:8080/api/v1/students/1" \
+  -H "Authorization: Bearer <token>"
+```
+
+**Response 200**
+
+```json
+{
+  "id": 1,
+  "carnet": "20210001",
+  "dni": "1020100001",
+  "name": "Carlos",
+  "lastName": "García",
+  "email": "carlos.garcia@itm.edu.co",
+  "phoneNumber": "+573012345678",
+  "role": "STUDENT",
+  "university": "ITM",
+  "gpa": 3.8,
+  "hasSanction": false,
+  "sanctionEndDate": null,
+  "activeLoans": 0
+}
+```
+
+**Response 404 — Estudiante no encontrado**
+
+```json
+{
+  "message": "Student with id 99 was not found.",
+  "status": "Not Found",
+  "timestamp": "2026-05-12T10:00:00",
+  "code": 404
+}
+```
+
+---
+
+### PATCH `/api/v1/students/{id}/sanction`
+
+Aplica o levanta una sanción sobre un estudiante. Requiere rol **ADMIN**.
+
+**Header requerido:** `Authorization: Bearer <token>`
+
+**Request Body**
+
+```json
+{
+  "active": true,
+  "sanctionEndDate": "2026-08-01T00:00:00"
+}
+```
+
+| Campo | Tipo | Requerido | Descripción |
+|---|---|---|---|
+| `active` | Boolean | Sí | `true` aplica la sanción, `false` la levanta |
+| `sanctionEndDate` | LocalDateTime | No | Fecha de fin de la sanción. Se ignora (limpia) cuando `active=false` |
+
+**Curl — aplicar sanción**
+
+```bash
+curl -X PATCH "http://localhost:8080/api/v1/students/1/sanction" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <token>" \
+  -d '{"active": true, "sanctionEndDate": "2026-08-01T00:00:00"}'
+```
+
+**Curl — levantar sanción**
+
+```bash
+curl -X PATCH "http://localhost:8080/api/v1/students/1/sanction" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <token>" \
+  -d '{"active": false}'
+```
+
+**Response 200 — Sanción actualizada**
+
+```json
+{
+  "id": 1,
+  "hasSanction": true,
+  "sanctionEndDate": "2026-08-01T00:00:00",
+  ...
+}
+```
+
+---
+
 ### POST `/api/v1/students/create`
 
 Registra un nuevo estudiante. Requiere rol **ADMIN**.
@@ -358,3 +564,45 @@ Una vez levantado el servicio:
 | OpenAPI JSON | `http://localhost:8080/v3/api-docs` |
 
 Los endpoints protegidos requieren agregar el JWT en Swagger UI mediante el botón **Authorize** usando el esquema `Bearer <token>`.
+
+---
+
+## Patrones de diseño
+
+### Strategy — Validación de estudiantes
+
+**Ubicación:** `domain/validation/StudentValidationStrategy` + `domain/validation/strategies/`
+
+Cada regla de negocio que debe verificarse al registrar un estudiante está encapsulada en su propia clase que implementa `StudentValidationStrategy`:
+
+| Estrategia | Orden | Regla |
+|---|---|---|
+| `EmailDomainValidationStrategy` | 1 | El email pertenece al dominio de la universidad seleccionada |
+| `DniValidationStrategy` | 2 | El DNI del request coincide con el registrado en `university-mock` |
+| `EmailMatchValidationStrategy` | 3 | El email del request coincide con el registrado en `university-mock` |
+| `EnrollmentValidationStrategy` | 4 | El estudiante tiene matrícula activa en `university-mock` |
+
+Cada estrategia es un `@Component` de Spring. El `StudentUseCase` recibe `List<StudentValidationStrategy>` por inyección y ejecuta todas con `strategies.forEach(s -> s.validate(student, uniData))`.
+
+**Beneficio:** agregar o remover una regla de validación no requiere tocar el use case — solo crear o eliminar una clase que implemente la interfaz.
+
+```
+StudentValidationStrategy (interface)
+  ├── EmailDomainValidationStrategy  @Order(1)
+  ├── DniValidationStrategy          @Order(2)
+  ├── EmailMatchValidationStrategy   @Order(3)
+  └── EnrollmentValidationStrategy   @Order(4)
+```
+
+---
+
+### Factory Method — Construcción del Student
+
+**Ubicación:** `domain/factory/StudentFactory`
+
+`StudentFactory.create(student, uniData, encodedPassword)` centraliza la construcción del objeto `Student` listo para persistir, encadenando los dos pasos de transformación:
+
+1. `student.withUniversityData(uniData)` — sobrescribe nombre, apellido y GPA con datos universitarios
+2. `.withRegistrationDefaults(encodedPassword)` — asigna password encriptado, rol `STUDENT`, sanciones iniciales en cero
+
+**Beneficio:** el `StudentUseCase` delega la creación al factory y queda como orquestador puro sin lógica de construcción.

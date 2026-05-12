@@ -28,81 +28,64 @@ import static com.bio_library.user.domain.constants.AuthConstants.AUTHENTICATION
 public class ControllerAdvisor {
 
     @ExceptionHandler(InvalidCredentialsException.class)
-    public ResponseEntity<ExceptionResponse> handlerInvalidCredentialsException(
-            InvalidCredentialsException exception) {
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ExceptionResponse(
-                exception.getMessage(), HttpStatus.UNAUTHORIZED.getReasonPhrase(), LocalDateTime.now(),
-                HttpStatus.UNAUTHORIZED.value()));
+    public ResponseEntity<ExceptionResponse> handlerInvalidCredentialsException(InvalidCredentialsException ex) {
+        return response(ex.getMessage(), HttpStatus.UNAUTHORIZED);
     }
 
-
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ExceptionResponse> handlerArgumentInvalidException(
-            MethodArgumentNotValidException exception) {
-        FieldError firstFieldError = exception.getFieldErrors().get(0);
-        return ResponseEntity.badRequest().body(new ExceptionResponse(firstFieldError.getDefaultMessage(),
-                HttpStatus.BAD_REQUEST.getReasonPhrase(), LocalDateTime.now(), HttpStatus.BAD_REQUEST.value()));
+    public ResponseEntity<ExceptionResponse> handlerArgumentInvalidException(MethodArgumentNotValidException ex) {
+        FieldError firstFieldError = ex.getFieldErrors().get(0);
+        return response(firstFieldError.getDefaultMessage(), HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(StudentAlreadyExistsException.class)
-    public ResponseEntity<ExceptionResponse> handlerStudentAlreadyExistsException(
-            StudentAlreadyExistsException exception) {
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(new ExceptionResponse(
-                exception.getMessage(), HttpStatus.CONFLICT.getReasonPhrase(), LocalDateTime.now(),
-                HttpStatus.CONFLICT.value()));
+    public ResponseEntity<ExceptionResponse> handlerStudentAlreadyExistsException(StudentAlreadyExistsException ex) {
+        return response(ex.getMessage(), HttpStatus.CONFLICT);
     }
 
     @ExceptionHandler(StudentNotFoundException.class)
-    public ResponseEntity<ExceptionResponse> handlerStudentNotFoundException(
-            StudentNotFoundException exception) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ExceptionResponse(
-                exception.getMessage(), HttpStatus.NOT_FOUND.getReasonPhrase(), LocalDateTime.now(),
-                HttpStatus.NOT_FOUND.value()));
+    public ResponseEntity<ExceptionResponse> handlerStudentNotFoundException(StudentNotFoundException ex) {
+        return response(ex.getMessage(), HttpStatus.NOT_FOUND);
     }
 
     @ExceptionHandler(InvalidUniversityEmailException.class)
-    public ResponseEntity<ExceptionResponse> handlerInvalidUniversityEmailException(
-            InvalidUniversityEmailException exception) {
-        return ResponseEntity.badRequest().body(new ExceptionResponse(
-                exception.getMessage(), HttpStatus.BAD_REQUEST.getReasonPhrase(), LocalDateTime.now(),
-                HttpStatus.BAD_REQUEST.value()));
+    public ResponseEntity<ExceptionResponse> handlerInvalidUniversityEmailException(InvalidUniversityEmailException ex) {
+        return response(ex.getMessage(), HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ExceptionResponse> handleAccessDeniedException(AccessDeniedException ex) {
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ExceptionResponse(
-                ACCESS_DENIED_EXCEPTION_MESSAGE, HttpStatus.FORBIDDEN.getReasonPhrase(),
-                LocalDateTime.now(), HttpStatus.FORBIDDEN.value()));
+        return response(ACCESS_DENIED_EXCEPTION_MESSAGE, HttpStatus.FORBIDDEN);
     }
 
     @ExceptionHandler(AuthenticationException.class)
     public ResponseEntity<ExceptionResponse> handleAuthenticationException(AuthenticationException ex) {
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ExceptionResponse(
-                AUTHENTICATION_REQUIRED_MESSAGE, HttpStatus.UNAUTHORIZED.getReasonPhrase(),
-                LocalDateTime.now(), HttpStatus.UNAUTHORIZED.value()));
+        return response(AUTHENTICATION_REQUIRED_MESSAGE, HttpStatus.UNAUTHORIZED);
     }
 
     @ExceptionHandler(UniversityStudentNotFoundException.class)
-    public ResponseEntity<ExceptionResponse> handleUniversityStudentNotFoundException(
-            UniversityStudentNotFoundException ex) {
-        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(new ExceptionResponse(
-                ex.getMessage(), HttpStatus.UNPROCESSABLE_ENTITY.getReasonPhrase(),
-                LocalDateTime.now(), HttpStatus.UNPROCESSABLE_ENTITY.value()));
+    public ResponseEntity<ExceptionResponse> handleUniversityStudentNotFoundException(UniversityStudentNotFoundException ex) {
+        return response(ex.getMessage(), HttpStatus.UNPROCESSABLE_ENTITY);
     }
 
     @ExceptionHandler(UniversityDataMismatchException.class)
-    public ResponseEntity<ExceptionResponse> handleUniversityDataMismatchException(
-            UniversityDataMismatchException ex) {
-        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(new ExceptionResponse(
-                ex.getMessage(), HttpStatus.UNPROCESSABLE_ENTITY.getReasonPhrase(),
-                LocalDateTime.now(), HttpStatus.UNPROCESSABLE_ENTITY.value()));
+    public ResponseEntity<ExceptionResponse> handleUniversityDataMismatchException(UniversityDataMismatchException ex) {
+        return response(ex.getMessage(), HttpStatus.UNPROCESSABLE_ENTITY);
     }
 
     @ExceptionHandler(StudentNotEnrolledException.class)
-    public ResponseEntity<ExceptionResponse> handleStudentNotEnrolledException(
-            StudentNotEnrolledException ex) {
-        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(new ExceptionResponse(
-                ex.getMessage(), HttpStatus.UNPROCESSABLE_ENTITY.getReasonPhrase(),
-                LocalDateTime.now(), HttpStatus.UNPROCESSABLE_ENTITY.value()));
+    public ResponseEntity<ExceptionResponse> handleStudentNotEnrolledException(StudentNotEnrolledException ex) {
+        return response(ex.getMessage(), HttpStatus.UNPROCESSABLE_ENTITY);
+    }
+
+    private static ResponseEntity<ExceptionResponse> response(String message, HttpStatus status) {
+        return ResponseEntity.status(status).body(
+                ExceptionResponse.builder()
+                        .message(message)
+                        .status(status.getReasonPhrase())
+                        .timestamp(LocalDateTime.now())
+                        .code(status.value())
+                        .build()
+        );
     }
 }
