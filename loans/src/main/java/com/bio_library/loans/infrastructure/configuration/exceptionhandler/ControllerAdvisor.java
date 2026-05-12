@@ -2,7 +2,10 @@ package com.bio_library.loans.infrastructure.configuration.exceptionhandler;
 
 import com.bio_library.loans.domain.exceptions.BookNotAvailableException;
 import com.bio_library.loans.domain.exceptions.BookNotFoundException;
+import com.bio_library.loans.domain.exceptions.LoanBlockedException;
+import com.bio_library.loans.domain.exceptions.LoanNotActiveException;
 import com.bio_library.loans.domain.exceptions.LoanNotFoundException;
+import com.bio_library.loans.domain.exceptions.LoanOwnershipException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -43,6 +46,36 @@ public class ControllerAdvisor {
                 .body(ExceptionResponse.builder()
                         .message(ex.getMessage())
                         .status(HttpStatus.UNPROCESSABLE_ENTITY.name())
+                        .timestamp(LocalDateTime.now())
+                        .build());
+    }
+
+    @ExceptionHandler(LoanBlockedException.class)
+    public ResponseEntity<ExceptionResponse> handleLoanBlockedException(LoanBlockedException ex) {
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
+                .body(ExceptionResponse.builder()
+                        .message(ex.getMessage())
+                        .status(HttpStatus.UNPROCESSABLE_ENTITY.name())
+                        .timestamp(LocalDateTime.now())
+                        .build());
+    }
+
+    @ExceptionHandler(LoanNotActiveException.class)
+    public ResponseEntity<ExceptionResponse> handleLoanNotActiveException(LoanNotActiveException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ExceptionResponse.builder()
+                        .message(ex.getMessage())
+                        .status(HttpStatus.CONFLICT.name())
+                        .timestamp(LocalDateTime.now())
+                        .build());
+    }
+
+    @ExceptionHandler(LoanOwnershipException.class)
+    public ResponseEntity<ExceptionResponse> handleLoanOwnershipException(LoanOwnershipException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(ExceptionResponse.builder()
+                        .message(ex.getMessage())
+                        .status(HttpStatus.FORBIDDEN.name())
                         .timestamp(LocalDateTime.now())
                         .build());
     }

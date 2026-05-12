@@ -45,8 +45,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             if (jwtPort.isTokenValid(jwt, email)) {
                 Long userId = jwtPort.getUserIdFromToken(jwt);
                 String role = jwtPort.getRoleFromToken(jwt);
+                Double gpa = jwtPort.getGpaFromToken(jwt);
 
-                LoanUserPrincipal principal = new LoanUserPrincipal(userId, email);
+                LoanUserPrincipal principal = new LoanUserPrincipal(userId, email, gpa);
                 List<SimpleGrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_" + role));
 
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(

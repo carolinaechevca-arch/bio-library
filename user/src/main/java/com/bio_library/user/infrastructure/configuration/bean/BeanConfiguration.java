@@ -56,11 +56,13 @@ public class BeanConfiguration {
     public IAuthServicePort authServicePort(
             IUserPersistencePort userPersistencePort,
             IPasswordEncoderPersistencePort passwordEncoderPersistencePort,
-            IJwtPersistencePort jwtPersistencePort) {
+            IJwtPersistencePort jwtPersistencePort,
+            IStudentPersistencePort studentPersistencePort) {
         return new AuthUseCase(
                 userPersistencePort,
                 passwordEncoderPersistencePort,
-                jwtPersistencePort);
+                jwtPersistencePort,
+                studentPersistencePort);
     }
 
     @Bean

@@ -32,4 +32,15 @@ public class CatalogFeignClientAdapter implements ICatalogFeignClientPort {
             throw new BookNotAvailableException(String.format(DomainConstants.BOOK_NOT_AVAILABLE, bookId));
         }
     }
+
+    @Override
+    public void decrementLoanCount(String bookId) {
+        log.info("[FEIGN] Releasing loan count for book id={}", bookId);
+        try {
+            feignClient.updateLoanCount(bookId, LoanCountFeignRequest.decrement());
+            log.info("[FEIGN] Loan count released successfully for book id={}", bookId);
+        } catch (FeignException e) {
+            log.warn("[FEIGN] Could not release loan count for book id={}: {}", bookId, e.getMessage());
+        }
+    }
 }

@@ -3,7 +3,9 @@ package com.bio_library.user.application.usecase;
 import com.bio_library.user.application.ports.in.IAuthServicePort;
 import com.bio_library.user.application.ports.out.IJwtPersistencePort;
 import com.bio_library.user.application.ports.out.IPasswordEncoderPersistencePort;
+import com.bio_library.user.application.ports.out.IStudentPersistencePort;
 import com.bio_library.user.application.ports.out.IUserPersistencePort;
+import com.bio_library.user.domain.enums.Role;
 import com.bio_library.user.domain.exceptions.InvalidCredentialsException;
 import com.bio_library.user.domain.model.AuthResponseModel;
 import com.bio_library.user.domain.model.AuthenticationModel;
@@ -18,10 +20,10 @@ import static com.bio_library.user.domain.constants.AuthConstants.INVALID_CREDEN
 @RequiredArgsConstructor
 public class AuthUseCase implements IAuthServicePort {
 
-
     private final IUserPersistencePort userPersistencePort;
     private final IPasswordEncoderPersistencePort passwordEncoder;
     private final IJwtPersistencePort jwtPort;
+    private final IStudentPersistencePort studentPersistencePort;
 
     @Override
     public AuthResponseModel authenticate(AuthenticationModel auth) {
@@ -42,7 +44,13 @@ public class AuthUseCase implements IAuthServicePort {
 
         log.info("[USE-CASE] Credentials validated successfully for userId={}, role={}", user.getId(), user.getRole());
 
-        String accessToken = jwtPort.generateAccessToken(user.getEmail(), user.getId(), user.getRole().name());
+        Double gpa = null;
+        if (Role.STUDENT.equals(user.getRole())) {
+            gpa = studentPersistencePort.findGpaByUserId(user.getId());
+            log.info("[USE-CASE] GPA retrieved for studentId={}: {}", user.getId(), gpa);
+        }
+
+        String accessToken = jwtPort.generateAccessToken(user.getEmail(), user.getId(), user.getRole().name(), gpa);
 
         log.info("[USE-CASE] User authenticated successfully: {}", auth.email());
 

@@ -24,10 +24,13 @@ public class JwtAdapter implements IJwtPersistencePort {
     private Long expiration;
 
     @Override
-    public String generateAccessToken(String email, Long userId, String role) {
+    public String generateAccessToken(String email, Long userId, String role, Double gpa) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("id", userId);
         claims.put("role", role);
+        if (gpa != null) {
+            claims.put("gpa", gpa);
+        }
 
         return Jwts.builder()
                 .setClaims(claims)

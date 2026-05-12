@@ -5,4 +5,5 @@ public interface IJwtPort {
     boolean isTokenValid(String token, String username);
     Long getUserIdFromToken(String token);
     String getRoleFromToken(String token);
+    Double getGpaFromToken(String token);
 }

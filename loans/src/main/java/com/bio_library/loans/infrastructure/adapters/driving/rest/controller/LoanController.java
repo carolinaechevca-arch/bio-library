@@ -40,7 +40,7 @@ public class LoanController {
             Authentication authentication) {
         LoanUserPrincipal principal = (LoanUserPrincipal) authentication.getPrincipal();
         log.info("[REST] POST loan studentId={} bookId={}", principal.id(), request.bookId());
-        Loan loan = servicePort.createLoan(request.bookId(), principal.id());
+        Loan loan = servicePort.createLoan(request.bookId(), principal.id(), principal.gpa());
         return ResponseEntity.status(HttpStatus.CREATED).body(restMapper.toResponse(loan));
     }
 
@@ -49,5 +49,15 @@ public class LoanController {
     public ResponseEntity<LoanResponse> markAsUsed(@PathVariable Long id) {
         log.info("[REST] PATCH mark-used loanId={}", id);
         return ResponseEntity.ok(restMapper.toResponse(servicePort.markAsUsed(id)));
+    }
+
+    @Operation(summary = "Return a borrowed book and release the license")
+    @PatchMapping("/{id}/return")
+    public ResponseEntity<LoanResponse> returnLoan(
+            @PathVariable Long id,
+            Authentication authentication) {
+        LoanUserPrincipal principal = (LoanUserPrincipal) authentication.getPrincipal();
+        log.info("[REST] PATCH return loanId={} studentId={}", id, principal.id());
+        return ResponseEntity.ok(restMapper.toResponse(servicePort.returnLoan(id, principal.id())));
     }
 }

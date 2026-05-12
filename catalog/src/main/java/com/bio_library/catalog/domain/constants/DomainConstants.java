@@ -6,6 +6,8 @@ public final class DomainConstants {
         throw new IllegalStateException("Utility class");
     }
 
+    public static final int MAX_CONCURRENT_LOANS = 5;
+
     public static final String BOOK_NOT_FOUND = "Book with id %s was not found.";
     public static final String LOAN_LIMIT_EXCEEDED = "Book has reached its maximum concurrent loan limit of %d.";
     public static final String LOAN_COUNT_ALREADY_ZERO = "Book active loan count is already zero.";

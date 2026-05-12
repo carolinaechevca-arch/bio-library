@@ -5,4 +5,5 @@ import com.bio_library.loans.domain.model.Loan;
 public interface ILoanPersistencePort {
     Loan save(Loan loan);
     Loan findById(Long id);
+    long countActiveLoansByStudentId(Long studentId);
 }

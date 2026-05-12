@@ -33,4 +33,10 @@ public class LoanPersistenceAdapter implements ILoanPersistencePort {
                 .map(mapper::toDomain)
                 .orElse(null);
     }
+
+    @Override
+    public long countActiveLoansByStudentId(Long studentId) {
+        log.info("[LOAN-DB] Counting active loans for studentId={}", studentId);
+        return loanRepository.countByStudentIdAndActiveTrue(studentId);
+    }
 }

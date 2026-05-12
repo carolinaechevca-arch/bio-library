@@ -6,4 +6,5 @@ public interface IStudentPersistencePort {
     Student saveStudent(Student student);
     boolean existsByEmail(String email);
     boolean existsByDni(String dni);
+    Double findGpaByUserId(Long userId);
 }

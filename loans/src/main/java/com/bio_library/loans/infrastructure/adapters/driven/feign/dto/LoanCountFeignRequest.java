@@ -4,4 +4,8 @@ public record LoanCountFeignRequest(String action) {
     public static LoanCountFeignRequest increment() {
         return new LoanCountFeignRequest("INCREMENT");
     }
+
+    public static LoanCountFeignRequest decrement() {
+        return new LoanCountFeignRequest("DECREMENT");
+    }
 }

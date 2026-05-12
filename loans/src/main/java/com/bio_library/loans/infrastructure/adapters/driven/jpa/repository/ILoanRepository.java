@@ -4,4 +4,5 @@ import com.bio_library.loans.infrastructure.adapters.driven.jpa.entity.LoanEntit
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface ILoanRepository extends JpaRepository<LoanEntity, Long> {
+    long countByStudentIdAndActiveTrue(Long studentId);
 }

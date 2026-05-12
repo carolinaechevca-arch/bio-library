@@ -17,8 +17,10 @@ public class LoanUseCase implements ILoanServicePort {
     private final LoanDomainService loanDomainService;
 
     @Override
-    public Loan createLoan(String bookId, Long studentId) {
+    public Loan createLoan(String bookId, Long studentId, Double gpa) {
         log.info("Creating loan: studentId={} bookId={}", studentId, bookId);
+        long activeLoans = loanPersistencePort.countActiveLoansByStudentId(studentId);
+        loanDomainService.validateCanBorrow(gpa, activeLoans);
         catalogFeignClientPort.incrementLoanCount(bookId);
         Loan loan = loanDomainService.prepareLoan(studentId, bookId);
         return loanPersistencePort.save(loan);
@@ -31,5 +33,16 @@ public class LoanUseCase implements ILoanServicePort {
         loanDomainService.validateLoanExists(loan, loanId);
         Loan updated = loanDomainService.markAsUsed(loan);
         return loanPersistencePort.save(updated);
+    }
+
+    @Override
+    public Loan returnLoan(Long loanId, Long studentId) {
+        log.info("Returning loan id={} studentId={}", loanId, studentId);
+        Loan loan = loanPersistencePort.findById(loanId);
+        loanDomainService.validateLoanExists(loan, loanId);
+        Loan returned = loanDomainService.returnLoan(loan, studentId);
+        Loan saved = loanPersistencePort.save(returned);
+        catalogFeignClientPort.decrementLoanCount(loan.getBookId());
+        return saved;
     }
 }

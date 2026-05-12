@@ -50,4 +50,12 @@ public class StudentPersistenceAdapter implements IStudentPersistencePort {
         log.info(STUDENT_DNI_CHECK, dni);
         return userRepository.existsByDni(dni);
     }
+
+    @Override
+    public Double findGpaByUserId(Long userId) {
+        log.info("[STUDENT-DB] Finding GPA for userId={}", userId);
+        return studentRepository.findByUser_Id(userId)
+                .map(StudentEntity::getGpa)
+                .orElse(null);
+    }
 }

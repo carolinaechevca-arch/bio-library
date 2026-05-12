@@ -38,6 +38,11 @@ public class JwtAdapter implements IJwtPort {
         return extractClaim(token, claims -> claims.get("role", String.class));
     }
 
+    @Override
+    public Double getGpaFromToken(String token) {
+        return extractClaim(token, claims -> claims.get("gpa", Double.class));
+    }
+
     private <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
         return claimsResolver.apply(extractAllClaims(token));
     }
