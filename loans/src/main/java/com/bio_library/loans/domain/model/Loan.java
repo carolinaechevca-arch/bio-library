@@ -15,4 +15,12 @@ public class Loan {
     LocalDateTime endDate;
     Boolean hasUsed;
     Boolean active;
+
+    public Loan withUsed() {
+        return toBuilder().hasUsed(true).build();
+    }
+
+    public Loan withReturned() {
+        return toBuilder().active(false).endDate(LocalDateTime.now()).build();
+    }
 }

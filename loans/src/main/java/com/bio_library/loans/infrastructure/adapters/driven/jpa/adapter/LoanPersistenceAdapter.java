@@ -8,7 +8,11 @@ import com.bio_library.loans.infrastructure.adapters.driven.jpa.repository.ILoan
 import com.bio_library.loans.infrastructure.adapters.driven.util.PersistenceConstants;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
+
+import java.util.Optional;
 
 @Slf4j
 @Component
@@ -38,5 +42,14 @@ public class LoanPersistenceAdapter implements ILoanPersistencePort {
     public long countActiveLoansByStudentId(Long studentId) {
         log.info("[LOAN-DB] Counting active loans for studentId={}", studentId);
         return loanRepository.countByStudentIdAndActiveTrue(studentId);
+    }
+
+    @Override
+    public Page<Loan> findLoansByStudentId(Long studentId, Boolean active, Pageable pageable) {
+        log.info(PersistenceConstants.LOAN_FIND_BY_STUDENT, studentId, active);
+        Page<LoanEntity> page = Optional.ofNullable(active)
+                .map(a -> loanRepository.findByStudentIdAndActive(studentId, a, pageable))
+                .orElseGet(() -> loanRepository.findByStudentId(studentId, pageable));
+        return page.map(mapper::toDomain);
     }
 }

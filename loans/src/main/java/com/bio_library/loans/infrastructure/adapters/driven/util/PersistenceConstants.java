@@ -9,4 +9,5 @@ public final class PersistenceConstants {
     public static final String LOAN_SAVE = "[DB] Saving loan studentId={} bookId={}";
     public static final String LOAN_SAVED = "[DB] Loan saved with id={}";
     public static final String LOAN_FIND_BY_ID = "[DB] Finding loan by id={}";
+    public static final String LOAN_FIND_BY_STUDENT = "[DB] Finding loans studentId={} active={}";
 }
