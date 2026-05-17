@@ -1,89 +1,130 @@
-# Notification Microservice
+# Notification — Bio Library
 
-Microservicio encargado de enviar notificaciones a los estudiantes ante eventos de préstamo de libros. Expone un endpoint REST interno que recibe eventos publicados por el microservicio de préstamos.
+## Objetivo
 
-## Puerto por defecto
+`notification` es el microservicio que **consume eventos de préstamos desde RabbitMQ** y envía notificaciones SMS a los estudiantes vía **Twilio**.
 
-`8084`
+No expone endpoints REST. Es un consumidor puro de mensajes asíncronos.
+
+---
+
+## Stack tecnológico
+
+| Tecnología | Versión |
+|---|---|
+| Java | 21 |
+| Spring Boot | 3.4.3 |
+| Spring AMQP (RabbitMQ) | — |
+| Twilio SDK | 10.6.6 |
+| Lombok | — |
+| Gradle | — |
+
+---
 
 ## Arquitectura
 
-Arquitectura hexagonal (Ports & Adapters).
+```
+RabbitMQ (exchange: bio.library.exchange)
+  │  routing-key: loan.event
+  ▼
+LoanNotificationListener  ──▶  ILoanNotificationServicePort (in)
+                                        │
+                               LoanNotificationUseCase
+                                        │
+                               LoanNotificationDomainService  (construye asunto y cuerpo)
+                                        │
+                               ISmsNotificationPort (out)
+                                        │
+                          TwilioSmsNotificationAdapter  ──▶  Twilio API
+```
 
 ```
 notification/
 └── src/main/java/com/bio_library/notification/
     ├── domain/
-    │   ├── enums/
-    │   │   └── LoanEventType          # Todos los eventos soportados
-    │   ├── model/
-    │   │   └── LoanNotification       # studentId, studentEmail, bookId, eventType, occurredAt
-    │   ├── constants/
-    │   │   └── DomainConstants        # Plantillas de asunto y cuerpo por evento
-    │   └── service/
-    │       └── LoanNotificationDomainService   # Construye asunto y cuerpo según el evento
+    │   ├── enums/    LoanEventType
+    │   ├── model/    LoanNotification
+    │   ├── service/  LoanNotificationDomainService
+    │   └── constants/ DomainConstants
     ├── application/
-    │   ├── ports/
-    │   │   ├── in/  ILoanNotificationServicePort
-    │   │   └── out/ IEmailNotificationPort
-    │   └── usecase/
-    │       └── LoanNotificationUseCase
+    │   ├── ports/in/  ILoanNotificationServicePort
+    │   ├── ports/out/ ISmsNotificationPort
+    │   └── usecase/   LoanNotificationUseCase
     └── infrastructure/
-        ├── adapters/
-        │   ├── driven/
-        │   │   └── logger/
-        │   │       └── LoggerEmailNotificationAdapter   # Simula envío de correo via log
-        │   └── driving/
-        │       └── rest/
-        │           ├── controller/ LoanNotificationController
-        │           ├── dto/request/ LoanNotificationRequest
-        │           └── util/        RestConstants
+        ├── adapters/driven/twilio/   TwilioSmsNotificationAdapter
+        ├── adapters/driving/rabbitmq/listener/ LoanNotificationListener
+        │                            dto/       LoanNotificationMessage
         └── configuration/
-            └── bean/ BeanConfiguration
+            ├── bean/    BeanConfiguration
+            └── rabbitmq/ RabbitMqConfiguration
 ```
+
+---
 
 ## Eventos soportados
 
-| Evento               | Cuándo se dispara                                          | Asunto del correo                                    |
-|----------------------|------------------------------------------------------------|------------------------------------------------------|
-| `BOOK_BORROWED`      | El estudiante registra un nuevo préstamo                   | Confirmación de préstamo - Bio Library               |
-| `BOOK_RETURNED`      | El estudiante realiza una devolución manual                | Devolución registrada - Bio Library                  |
-| `LOAN_USAGE_WARNING` | El libro lleva más de 2 días sin usarse (job diario 8:00)  | Aviso: tu licencia vence en 24 horas - Bio Library   |
-| `LOAN_USAGE_REVOKED` | El libro lleva más de 3 días sin usarse (job diario 8:30)  | Licencia revocada por inactividad - Bio Library      |
-| `LOAN_EXPIRED`       | El préstamo supera los 15 días activos (job diario 9:00)   | Préstamo vencido - Bio Library                       |
+| Evento | Cuándo se dispara | Mensaje SMS |
+|---|---|---|
+| `BOOK_BORROWED` | El estudiante registra un nuevo préstamo | Confirmación de préstamo |
+| `BOOK_RETURNED` | El estudiante realiza una devolución manual | Devolución registrada |
+| `LOAN_USAGE_WARNING` | Libro sin usar durante 2 días (job cada 5 min) | Aviso: licencia vence en 24 h |
+| `LOAN_USAGE_REVOKED` | Libro sin usar durante 3 días (job cada 5 min) | Licencia revocada por inactividad |
+| `LOAN_EXPIRED` | Préstamo activo supera 15 días (job cada 5 min) | Préstamo vencido |
 
-## Endpoint
+---
 
-### `POST /api/v1/notifications/loan-event`
+## Mensaje RabbitMQ
 
-Recibe un evento de préstamo y envía la notificación al estudiante.
+El microservicio `loans` publica mensajes con este esquema:
 
-**Body:**
 ```json
 {
-  "studentId": 1,
-  "studentEmail": "estudiante@universidad.edu.co",
-  "bookId": "abc123",
+  "studentId": 42,
+  "studentEmail": "carlos.garcia@itm.edu.co",
+  "studentPhone": "+573012345678",
+  "bookId": "64a1b2c3d4e5f6a7b8c9d0e1",
   "eventType": "BOOK_BORROWED"
 }
 ```
 
-**Respuesta:** `202 Accepted`
+El SMS se envía al `studentPhone`. Si el teléfono es nulo o vacío, el evento se descarta con un log de advertencia.
 
-## Integración con préstamos
+---
 
-El microservicio de préstamos (`loans`, puerto 8083) llama a este servicio vía Feign Client de forma no bloqueante:
+## Configuración de Twilio
 
-| Acción en loans                   | Evento enviado         |
-|-----------------------------------|------------------------|
-| Crear préstamo                    | `BOOK_BORROWED`        |
-| Devolución manual del estudiante  | `BOOK_RETURNED`        |
-| Job: libro sin usar a las 48 h    | `LOAN_USAGE_WARNING`   |
-| Job: libro sin usar a las 72 h    | `LOAN_USAGE_REVOKED`   |
-| Job: préstamo activo +15 días     | `LOAN_EXPIRED`         |
+Para que los SMS lleguen debes configurar las siguientes variables en `.env`:
 
-Si el servicio de notificaciones no está disponible, el error se registra en log sin afectar la operación principal.
+| Variable | Descripción |
+|---|---|
+| `TWILIO_ACCOUNT_SID` | Account SID de tu cuenta Twilio |
+| `TWILIO_AUTH_TOKEN` | Auth Token de tu cuenta Twilio |
+| `TWILIO_PHONE_NUMBER` | Número Twilio remitente en formato E.164 (`+1234567890`) |
 
-## Adaptador de email actual
+> Si las credenciales están vacías el servicio arranca correctamente pero los SMS no se envían — solo se registra una advertencia en log.
 
-`LoggerEmailNotificationAdapter` imprime el correo en consola. Para producción, reemplazar con un adaptador SMTP (JavaMailSender) o proveedor externo (SendGrid, AWS SES, etc.) implementando `IEmailNotificationPort`.
+El estudiante también debe tener `phoneNumber` registrado en el sistema en formato E.164 (`+573012345678`).
+
+---
+
+## Variables de entorno
+
+| Variable | Default | Descripción |
+|---|---|---|
+| `SERVER_PORT` | `8084` | Puerto del servidor |
+| `RABBITMQ_HOST` | `localhost` | Host de RabbitMQ |
+| `RABBITMQ_PORT` | `5672` | Puerto de RabbitMQ |
+| `RABBITMQ_USER` | `guest` | Usuario de RabbitMQ |
+| `RABBITMQ_PASS` | `guest` | Contraseña de RabbitMQ |
+| `RABBITMQ_EXCHANGE` | `bio.library.exchange` | Exchange donde escucha |
+| `RABBITMQ_QUEUE` | `loan.notification.queue` | Cola de mensajes |
+| `RABBITMQ_ROUTING_KEY` | `loan.event` | Routing key |
+| `TWILIO_ACCOUNT_SID` | — | Credencial Twilio |
+| `TWILIO_AUTH_TOKEN` | — | Credencial Twilio |
+| `TWILIO_PHONE_NUMBER` | — | Número remitente Twilio |
+
+---
+
+## Métricas
+
+Expone el endpoint `/actuator/prometheus` en el puerto `8084` para scraping con Prometheus.

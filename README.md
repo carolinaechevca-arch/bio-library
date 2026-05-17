@@ -11,9 +11,9 @@ Sistema de gestión de biblioteca universitaria basado en microservicios con arq
 | university-mock | 8081 | Mock del sistema universitario |
 | catalog | 8082 | Catálogo de libros (MongoDB) |
 | loans | 8083 | Gestión de préstamos |
-| notification | 8084 | Notificaciones de eventos de préstamo |
+| notification | 8084 | Notificaciones SMS vía Twilio (consume RabbitMQ) |
 
-**Infraestructura incluida:** PostgreSQL · MongoDB · RabbitMQ
+**Infraestructura incluida:** PostgreSQL · MongoDB · RabbitMQ · Prometheus · Grafana · Jaeger
 
 ---
 
@@ -21,6 +21,29 @@ Sistema de gestión de biblioteca universitaria basado en microservicios con arq
 
 - Docker >= 24
 - Docker Compose >= 2.20
+
+---
+
+## Configuración inicial
+
+Copia el archivo de entorno y completa los valores:
+
+```bash
+cp .env.example .env
+```
+
+Variables obligatorias a configurar en `.env`:
+
+| Variable | Descripción |
+|---|---|
+| `POSTGRES_PASSWORD` | Contraseña de PostgreSQL |
+| `RABBITMQ_PASS` | Contraseña de RabbitMQ |
+| `JWT_SECRET` | Clave HMAC para firmar tokens |
+| `TWILIO_ACCOUNT_SID` | Account SID de Twilio (para SMS) |
+| `TWILIO_AUTH_TOKEN` | Auth Token de Twilio |
+| `TWILIO_PHONE_NUMBER` | Número Twilio en formato E.164 (`+1234567890`) |
+
+> Si no tienes credenciales de Twilio, las notificaciones SMS se omiten pero el sistema funciona correctamente.
 
 ---
 
@@ -80,6 +103,8 @@ docker compose up -d loans
 
 ## URLs una vez levantado
 
+### Aplicación
+
 | Recurso | URL |
 |---|---|
 | API Gateway (entrada principal) | http://localhost:8090 |
@@ -90,11 +115,19 @@ docker compose up -d loans
 | Swagger university-mock | http://localhost:8081/swagger-ui.html |
 | Health gateway | http://localhost:8090/actuator/health |
 
+### Observabilidad
+
+| Recurso | URL | Credenciales |
+|---|---|---|
+| Prometheus | http://localhost:9090 | — |
+| Grafana | http://localhost:3000 | admin / admin |
+| Jaeger (trazas) | http://localhost:16686 | — |
+
 ---
 
 ## Flujo de prueba
 
-1. **Registrar estudiante**
+1. **Registrar estudiante** (requiere token ADMIN)
    ```
    POST http://localhost:8090/api/v1/students/create
    ```
@@ -103,10 +136,10 @@ docker compose up -d loans
    {
      "carnet": "2021-0001",
      "dni": "123456789",
-     "email": "estudiante@universidad.edu",
+     "email": "estudiante@itm.edu.co",
      "password": "Password1!",
-     "phoneNumber": "55551234",
-     "university": "UNAH"
+     "phoneNumber": "+573001234567",
+     "university": "ITM"
    }
    ```
 
@@ -129,6 +162,7 @@ docker compose up -d loans
    ```
    POST http://localhost:8090/api/v1/loans
    ```
+   > Se bloquea si el estudiante tiene sanción activa (403) o GPA < 3.2 con préstamo activo (422).
 
 ---
 
@@ -138,27 +172,64 @@ docker compose up -d loans
 Cliente
   │
   ▼
-api-gateway :8090  (JWT auth + routing)
+api-gateway :8090  (JWT auth + routing + CORS)
   ├──▶ user :8080  ──▶ university-mock :8081
   ├──▶ catalog :8082  (MongoDB)
   └──▶ loans :8083
-         ├──▶ catalog :8082
-         ├──▶ user :8080
-         └──▶ notification :8084
+         ├──▶ catalog :8082  (Feign — licencias)
+         ├──▶ user :8080     (Feign — email/teléfono/sanción)
+         └──▶ RabbitMQ :5672 ──▶ notification :8084 ──▶ Twilio SMS
 
 Infraestructura:
   PostgreSQL :5432  (schemas: users · loans · university)
   MongoDB    :27017 (db: biolibrary)
   RabbitMQ   :5672  / UI :15672
+
+Observabilidad:
+  Prometheus :9090  (scrape de todos los servicios)
+  Grafana    :3000  (dashboards — datasource Prometheus pre-configurado)
+  Jaeger     :16686 (trazas distribuidas OTLP)
 ```
 
 ---
 
 ## Seed de MongoDB
 
-Al primer arranque, MongoDB carga automáticamente `mongo-init/seed.js` con 6 libros de ejemplo en la colección `books`.
+Al primer arranque, MongoDB carga automáticamente `mongo-init/01-seed.sh` → `seed.js` con 18 libros de ejemplo.
 
 Para verificar:
 ```bash
 docker exec bio-mongodb mongosh biolibrary --eval "db.books.find().pretty()"
 ```
+
+Para forzar un re-seed (borra todos los datos de Mongo):
+```bash
+docker compose down
+docker volume rm bio-library_mongo_data
+docker compose up --build
+```
+
+---
+
+## Observabilidad
+
+### Prometheus
+
+Abre http://localhost:9090 → **Status → Targets** para ver el estado de scraping de los 6 servicios.
+
+Métricas útiles:
+```
+http_server_requests_seconds_count
+jvm_memory_used_bytes
+process_cpu_usage
+```
+
+### Grafana
+
+Abre http://localhost:3000 (admin/admin). El datasource de Prometheus ya está pre-configurado.
+
+Para importar un dashboard de JVM: **Dashboards → Import → ID `4701`**.
+
+### Jaeger
+
+Abre http://localhost:16686 para ver trazas distribuidas entre servicios.

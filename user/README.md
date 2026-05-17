@@ -207,7 +207,7 @@ curl -X GET "http://localhost:8080/api/v1/auth/me" \
 
 ### GET `/api/v1/students`
 
-Lista paginada de estudiantes con filtro y ordenamiento. Requiere rol **ADMIN**.
+Lista paginada de estudiantes de la **misma universidad del admin autenticado** (derivada automáticamente del JWT). Requiere rol **ADMIN**.
 
 **Header requerido:** `Authorization: Bearer <token>`
 
@@ -215,21 +215,17 @@ Lista paginada de estudiantes con filtro y ordenamiento. Requiere rol **ADMIN**.
 
 | Parámetro | Tipo | Requerido | Default | Descripción |
 |---|---|---|---|---|
-| `university` | String | No | — | Filtra por valor del enum `University` (e.g. `ITM`) |
 | `page` | Integer | No | `0` | Número de página (0-based) |
 | `size` | Integer | No | `10` | Elementos por página |
 | `sortBy` | String | No | `carnet` | Campo de ordenamiento: `carnet`, `gpa`, `user.name`, `user.lastName` |
 | `sortDir` | String | No | `asc` | Dirección: `asc` o `desc` |
 
+> La universidad no se filtra como parámetro — se toma automáticamente del email del admin en el token JWT.
+
 **Curl**
 
 ```bash
-# Todos los estudiantes, página 0
 curl -X GET "http://localhost:8080/api/v1/students?page=0&size=10" \
-  -H "Authorization: Bearer <token>"
-
-# Filtrados por universidad, ordenados por GPA descendente
-curl -X GET "http://localhost:8080/api/v1/students?university=ITM&sortBy=gpa&sortDir=desc" \
   -H "Authorization: Bearer <token>"
 ```
 
@@ -304,14 +300,16 @@ Aplica o levanta una sanción sobre un estudiante. Requiere rol **ADMIN**.
 ```json
 {
   "active": true,
-  "sanctionEndDate": "2026-08-01T00:00:00"
+  "sanctionEndDate": "2026-08-01"
 }
 ```
 
 | Campo | Tipo | Requerido | Descripción |
 |---|---|---|---|
 | `active` | Boolean | Sí | `true` aplica la sanción, `false` la levanta |
-| `sanctionEndDate` | LocalDateTime | No | Fecha de fin de la sanción. Se ignora (limpia) cuando `active=false` |
+| `sanctionEndDate` | LocalDate | No | Fecha de fin (`YYYY-MM-DD`). Se ignora (limpia) cuando `active=false` |
+
+> La sanción se levanta automáticamente al día siguiente de `sanctionEndDate`. El job de sanciones corre cada 5 minutos y elimina las sanciones donde `sanctionEndDate < hoy`.
 
 **Curl — aplicar sanción**
 
@@ -319,7 +317,7 @@ Aplica o levanta una sanción sobre un estudiante. Requiere rol **ADMIN**.
 curl -X PATCH "http://localhost:8080/api/v1/students/1/sanction" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer <token>" \
-  -d '{"active": true, "sanctionEndDate": "2026-08-01T00:00:00"}'
+  -d '{"active": true, "sanctionEndDate": "2026-08-01"}'
 ```
 
 **Curl — levantar sanción**
@@ -337,7 +335,7 @@ curl -X PATCH "http://localhost:8080/api/v1/students/1/sanction" \
 {
   "id": 1,
   "hasSanction": true,
-  "sanctionEndDate": "2026-08-01T00:00:00",
+  "sanctionEndDate": "2026-08-01",
   ...
 }
 ```
@@ -595,3 +593,33 @@ StudentValidationStrategy (interface)
 2. `.withRegistrationDefaults(encodedPassword)` — asigna password encriptado, rol `STUDENT`, sanciones iniciales en cero
 
 **Beneficio:** el `StudentUseCase` delega la creación al factory y queda como orquestador puro sin lógica de construcción.
+
+---
+
+## Job de sanciones (Scheduler)
+
+El job `SanctionScheduledJob` se ejecuta cada **5 minutos** y levanta automáticamente las sanciones cuya `sanctionEndDate` ya pasó (`sanctionEndDate < hoy`).
+
+Ejemplo: si la sanción termina el `2026-08-01`, el job la elimina a partir del `2026-08-02`.
+
+---
+
+## Endpoint interno
+
+El endpoint `GET /api/v1/internal/students/{userId}/email` es de uso exclusivo entre microservicios (no pasa por el API Gateway). Retorna:
+
+```json
+{
+  "email": "carlos.garcia@itm.edu.co",
+  "phone": "+573012345678",
+  "hasSanction": false
+}
+```
+
+Es usado por el micro `loans` para validar sanción antes de crear un préstamo y para obtener datos de contacto al enviar notificaciones SMS.
+
+---
+
+## Métricas
+
+Expone `/actuator/prometheus` en el puerto `8080` para scraping con Prometheus.
