@@ -24,22 +24,34 @@ public class TwilioSmsNotificationAdapter implements ISmsNotificationPort {
 
     @PostConstruct
     public void init() {
-        Twilio.init(accountSid, authToken);
-        log.info("[TWILIO] Initialized with number={}", fromPhoneNumber);
+        if (accountSid != null && !accountSid.isBlank()) {
+            Twilio.init(accountSid, authToken);
+            log.info("[TWILIO] Initialized with number={}", fromPhoneNumber);
+        } else {
+            log.warn("[TWILIO] No credentials configured — SMS disabled");
+        }
     }
 
     @Override
     public void send(String toPhoneNumber, String message) {
+        if (accountSid == null || accountSid.isBlank()) {
+            log.warn("[SMS] Twilio not configured, skipping notification to={}", toPhoneNumber);
+            return;
+        }
         if (toPhoneNumber == null || toPhoneNumber.isBlank()) {
             log.warn("[SMS] No phone number available, skipping notification");
             return;
         }
-        log.info("[SMS] Sending to={}", toPhoneNumber);
-        Message.creator(
-                new PhoneNumber(toPhoneNumber),
-                new PhoneNumber(fromPhoneNumber),
-                message
-        ).create();
-        log.info("[SMS] Sent successfully to={}", toPhoneNumber);
+        try {
+            log.info("[SMS] Sending to={}", toPhoneNumber);
+            Message.creator(
+                    new PhoneNumber(toPhoneNumber),
+                    new PhoneNumber(fromPhoneNumber),
+                    message
+            ).create();
+            log.info("[SMS] Sent successfully to={}", toPhoneNumber);
+        } catch (Exception e) {
+            log.error("[SMS] Failed to send to={}: {}", toPhoneNumber, e.getMessage());
+        }
     }
 }
