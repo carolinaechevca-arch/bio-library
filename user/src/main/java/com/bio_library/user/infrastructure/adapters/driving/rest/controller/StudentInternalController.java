@@ -20,14 +20,16 @@ public class StudentInternalController {
     private final IStudentServicePort studentServicePort;
 
     @GetMapping("/{userId}/email")
-    public ResponseEntity<Map<String, String>> getStudentEmail(@PathVariable Long userId) {
+    public ResponseEntity<Map<String, Object>> getStudentEmail(@PathVariable Long userId) {
         log.info("[INTERNAL] GET contact info for userId={}", userId);
         var student = studentServicePort.getStudent(userId);
         String email = student.getUser().getEmail();
         String phone = student.getUser().getPhoneNumber();
-        return ResponseEntity.ok(Map.of(
-                "email", email != null ? email : "",
-                "phone", phone != null ? phone : ""
-        ));
+        Boolean hasSanction = student.getHasSanction();
+        Map<String, Object> response = new java.util.HashMap<>();
+        response.put("email", email != null ? email : "");
+        response.put("phone", phone != null ? phone : "");
+        response.put("hasSanction", Boolean.TRUE.equals(hasSanction));
+        return ResponseEntity.ok(response);
     }
 }

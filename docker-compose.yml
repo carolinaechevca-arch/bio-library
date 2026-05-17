@@ -55,7 +55,6 @@ services:
       timeout: 5s
       retries: 5
 
-
   university-mock:
     build:
       context: ./university-mock
@@ -120,6 +119,8 @@ services:
       context: ./notification
       dockerfile: Dockerfile
     container_name: bio-notification
+    ports:
+      - "8084:8084"
     environment:
       RABBITMQ_HOST: rabbitmq
       RABBITMQ_USER: ${RABBITMQ_USER}
@@ -191,11 +192,63 @@ services:
     networks:
       - bio-network
 
+  # ─── Observability ────────────────────────────────────────────────────────────
+
+  prometheus:
+    image: prom/prometheus:v2.52.0
+    container_name: bio-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    depends_on:
+      - api-gateway
+      - user
+      - catalog
+      - loans
+      - notification
+    networks:
+      - bio-network
+
+  grafana:
+    image: grafana/grafana:10.4.2
+    container_name: bio-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+    depends_on:
+      - prometheus
+    networks:
+      - bio-network
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.57
+    container_name: bio-jaeger
+    ports:
+      - "16686:16686"
+      - "4317:4317"
+      - "4318:4318"
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    networks:
+      - bio-network
 
 volumes:
   postgres_data:
   mongo_data:
   rabbitmq_data:
+  prometheus_data:
+  grafana_data:
 
 networks:
   bio-network:

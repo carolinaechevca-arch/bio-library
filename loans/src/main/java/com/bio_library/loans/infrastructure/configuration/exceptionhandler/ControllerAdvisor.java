@@ -6,6 +6,7 @@ import com.bio_library.loans.domain.exceptions.LoanBlockedException;
 import com.bio_library.loans.domain.exceptions.LoanNotActiveException;
 import com.bio_library.loans.domain.exceptions.LoanNotFoundException;
 import com.bio_library.loans.domain.exceptions.LoanOwnershipException;
+import com.bio_library.loans.domain.exceptions.StudentSanctionedException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -72,6 +73,16 @@ public class ControllerAdvisor {
 
     @ExceptionHandler(LoanOwnershipException.class)
     public ResponseEntity<ExceptionResponse> handleLoanOwnershipException(LoanOwnershipException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(ExceptionResponse.builder()
+                        .message(ex.getMessage())
+                        .status(HttpStatus.FORBIDDEN.name())
+                        .timestamp(LocalDateTime.now())
+                        .build());
+    }
+
+    @ExceptionHandler(StudentSanctionedException.class)
+    public ResponseEntity<ExceptionResponse> handleStudentSanctionedException(StudentSanctionedException ex) {
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .body(ExceptionResponse.builder()
                         .message(ex.getMessage())

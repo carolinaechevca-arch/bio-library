@@ -6,6 +6,8 @@ import com.bio_library.loans.application.ports.out.ILoanPersistencePort;
 import com.bio_library.loans.application.ports.out.INotificationPort;
 import com.bio_library.loans.application.ports.out.IUserFeignClientPort;
 import com.bio_library.loans.application.ports.out.StudentContactInfo;
+import com.bio_library.loans.domain.constants.DomainConstants;
+import com.bio_library.loans.domain.exceptions.StudentSanctionedException;
 import com.bio_library.loans.domain.factory.LoanFactory;
 import com.bio_library.loans.domain.model.Loan;
 import com.bio_library.loans.domain.service.LoanDomainService;
@@ -33,11 +35,18 @@ public class LoanUseCase implements ILoanServicePort {
     @Override
     public Loan createLoan(String bookId, Long studentId, Double gpa, String studentEmail) {
         log.info("Creating loan: studentId={} bookId={}", studentId, bookId);
+
+        StudentContactInfo contact = userFeignClientPort.getStudentContact(studentId);
+        if (contact != null && contact.hasSanction()) {
+            log.warn("[LOAN] Blocked by sanction: studentId={}", studentId);
+            throw new StudentSanctionedException(DomainConstants.STUDENT_SANCTIONED);
+        }
+
         long activeLoans = loanPersistencePort.countActiveLoansByStudentId(studentId);
         creationRules.forEach(rule -> rule.validate(gpa, activeLoans));
         catalogFeignClientPort.incrementLoanCount(bookId);
         Loan saved = loanPersistencePort.save(LoanFactory.newLoan(studentId, bookId));
-        String phone = getPhone(studentId);
+        String phone = contact != null ? contact.phone() : null;
         notificationPort.notifyBookBorrowed(studentId, studentEmail, phone, bookId);
         return saved;
     }

@@ -22,4 +22,5 @@ public final class DomainConstants {
 
     public static final String LOAN_NOT_ACTIVE = "Loan with id %d is already returned.";
     public static final String LOAN_OWNERSHIP_DENIED = "You are not authorized to return this loan.";
+    public static final String STUDENT_SANCTIONED = "Loan blocked: student has an active sanction.";
 }

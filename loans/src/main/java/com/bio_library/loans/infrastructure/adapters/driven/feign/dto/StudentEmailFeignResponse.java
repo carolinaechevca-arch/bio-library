@@ -1,3 +1,3 @@
 package com.bio_library.loans.infrastructure.adapters.driven.feign.dto;
 
-public record StudentEmailFeignResponse(String email, String phone) {}
+public record StudentEmailFeignResponse(String email, String phone, boolean hasSanction) {}

@@ -20,7 +20,7 @@ public class UserFeignClientAdapter implements IUserFeignClientPort {
     public StudentContactInfo getStudentContact(Long userId) {
         try {
             StudentEmailFeignResponse response = feignClient.getStudentEmail(userId);
-            return new StudentContactInfo(response.email(), response.phone());
+            return new StudentContactInfo(response.email(), response.phone(), response.hasSanction());
         } catch (FeignException e) {
             log.warn("[USER-FEIGN] Could not retrieve contact for userId={}: {}", userId, e.getMessage());
             return null;
