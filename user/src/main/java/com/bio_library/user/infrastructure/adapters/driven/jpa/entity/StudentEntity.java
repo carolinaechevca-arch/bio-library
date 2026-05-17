@@ -13,7 +13,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 @Entity
 @Table(name = "students")
@@ -36,6 +36,6 @@ public class StudentEntity {
 
     private Double gpa;
     private Boolean hasSanction;
-    private LocalDateTime sanctionEndDate;
+    private LocalDate sanctionEndDate;
     private Integer activeLoans;
 }

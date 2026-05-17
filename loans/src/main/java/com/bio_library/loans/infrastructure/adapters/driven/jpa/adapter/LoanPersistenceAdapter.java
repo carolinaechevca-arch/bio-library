@@ -12,6 +12,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 
 @Slf4j
@@ -51,5 +53,26 @@ public class LoanPersistenceAdapter implements ILoanPersistencePort {
                 .map(a -> loanRepository.findByStudentIdAndActive(studentId, a, pageable))
                 .orElseGet(() -> loanRepository.findByStudentId(studentId, pageable));
         return page.map(mapper::toDomain);
+    }
+
+    @Override
+    public List<Loan> findActiveUnusedLoansBetween(LocalDate from, LocalDate to) {
+        log.info("[DB] Finding active unused loans started between {} and {}", from, to);
+        return loanRepository.findByActiveTrueAndHasUsedFalseAndStartDateBetween(from, to)
+                .stream().map(mapper::toDomain).toList();
+    }
+
+    @Override
+    public List<Loan> findActiveUnusedLoansOlderThan(LocalDate cutoff) {
+        log.info("[DB] Finding active unused loans started before {}", cutoff);
+        return loanRepository.findByActiveTrueAndHasUsedFalseAndStartDateBefore(cutoff)
+                .stream().map(mapper::toDomain).toList();
+    }
+
+    @Override
+    public List<Loan> findActiveLoansOlderThan(LocalDate cutoff) {
+        log.info("[DB] Finding active loans started before {}", cutoff);
+        return loanRepository.findByActiveTrueAndStartDateBefore(cutoff)
+                .stream().map(mapper::toDomain).toList();
     }
 }

@@ -4,7 +4,7 @@ import com.bio_library.user.domain.enums.Role;
 import lombok.Builder;
 import lombok.Value;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 @Value
 @Builder(toBuilder = true)
@@ -13,7 +13,7 @@ public class Student {
     String carnet;
     Double gpa;
     Boolean hasSanction;
-    LocalDateTime sanctionEndDate;
+    LocalDate sanctionEndDate;
     Integer activeLoans;
 
     public Student withRegistrationDefaults(String encodedPassword) {
@@ -38,7 +38,7 @@ public class Student {
                 .build();
     }
 
-    public Student withSanction(Boolean active, LocalDateTime sanctionEndDate) {
+    public Student withSanction(Boolean active, LocalDate sanctionEndDate) {
         return toBuilder()
                 .hasSanction(active)
                 .sanctionEndDate(Boolean.TRUE.equals(active) ? sanctionEndDate : null)

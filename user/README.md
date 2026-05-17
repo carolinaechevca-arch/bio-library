@@ -348,16 +348,12 @@ curl -X PATCH "http://localhost:8080/api/v1/students/1/sanction" \
 
 Registra un nuevo estudiante. Requiere rol **ADMIN**.
 
-**Header requerido:** `Authorization: Bearer <token>`
-
 **Request Body**
 
 ```json
 {
   "carnet": "20210001",
   "dni": "1020100001",
-  "name": "Carlos",
-  "lastName": "García",
   "email": "carlos.garcia@itm.edu.co",
   "password": "SecurePass123",
   "phoneNumber": "+573012345678",
@@ -369,26 +365,20 @@ Registra un nuevo estudiante. Requiere rol **ADMIN**.
 |---|---|---|---|
 | `carnet` | String | Sí | Debe existir en el sistema universitario |
 | `dni` | String | Sí | Debe coincidir con el registro universitario |
-| `name` | String | Sí | Máx 100 caracteres (sobrescrito por dato universitario) |
-| `lastName` | String | Sí | Máx 100 caracteres (sobrescrito por dato universitario) |
 | `email` | String | Sí | Debe pertenecer al dominio de la universidad y coincidir con el registro |
 | `password` | String | Sí | 8–100 caracteres |
 | `phoneNumber` | String | Sí | — |
 | `university` | String | Sí | Valor del enum `University` (ver tabla de universidades) |
 
-> `name`, `lastName` y `gpa` son sobrescritos por los datos que retorna `university-mock`.
 
 **Curl**
 
 ```bash
 curl -X POST "http://localhost:8080/api/v1/students/create" \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer <token>" \
-  -d '{
+    -d '{
     "carnet": "20210001",
     "dni": "1020100001",
-    "name": "Carlos",
-    "lastName": "García",
     "email": "carlos.garcia@itm.edu.co",
     "password": "SecurePass123",
     "phoneNumber": "+573012345678",

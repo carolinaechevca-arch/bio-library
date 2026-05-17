@@ -1,7 +1,6 @@
 package com.bio_library.user.infrastructure.adapters.driving.rest.controller;
 
 import com.bio_library.user.application.ports.in.IStudentServicePort;
-import com.bio_library.user.domain.enums.University;
 import com.bio_library.user.domain.model.Student;
 import com.bio_library.user.infrastructure.adapters.driving.rest.dto.request.SanctionRequestDto;
 import com.bio_library.user.infrastructure.adapters.driving.rest.dto.request.StudentRequest;
@@ -26,6 +25,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -34,8 +34,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/v1/students")
@@ -75,7 +73,7 @@ public class StudentController {
 
     @Operation(
             summary = "List students",
-            description = "Returns a paginated list of students, optionally filtered by university. Requires ADMIN role."
+            description = "Returns a paginated list of students belonging to the admin's university (resolved from JWT). Requires ADMIN role."
     )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Paginated list of students"),
@@ -87,8 +85,7 @@ public class StudentController {
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Page<StudentResponse>> getStudents(
-            @Parameter(description = "Filter by university enum value (e.g. ITM, UNIVERSIDAD_NACIONAL)")
-            @RequestParam(required = false) String university,
+            Authentication authentication,
             @Parameter(description = "Page number (0-based)", example = "0")
             @RequestParam(defaultValue = "0") int page,
             @Parameter(description = "Page size", example = "10")
@@ -98,17 +95,13 @@ public class StudentController {
             @Parameter(description = "Sort direction: asc or desc", example = "asc")
             @RequestParam(defaultValue = "asc") String sortDir) {
 
-        University uni = Optional.ofNullable(university)
-                .map(u -> University.valueOf(u.toUpperCase()))
-                .orElse(null);
-
         Sort sort = Sort.by(sortDir.equalsIgnoreCase("desc") ? Sort.Direction.DESC : Sort.Direction.ASC, sortBy);
         Pageable pageable = PageRequest.of(page, size, sort);
 
-        log.info("[LIST] GET /students university={} page={} size={} sortBy={} sortDir={}",
-                university, page, size, sortBy, sortDir);
+        log.info("[LIST] GET /students adminEmail={} page={} size={} sortBy={} sortDir={}",
+                authentication.getName(), page, size, sortBy, sortDir);
 
-        return ResponseEntity.ok(studentServicePort.getStudents(uni, pageable).map(mapper::toResponse));
+        return ResponseEntity.ok(studentServicePort.getStudents(authentication.getName(), pageable).map(mapper::toResponse));
     }
 
     @Operation(
@@ -157,6 +150,7 @@ public class StudentController {
             @Valid @RequestBody SanctionRequestDto request) {
         log.info("[SANCTION] PATCH /students/{}/sanction active={}", id, request.active());
         Student updated = studentServicePort.updateSanction(id, request.active(), request.sanctionEndDate());
+
         return ResponseEntity.ok(mapper.toResponse(updated));
     }
 }

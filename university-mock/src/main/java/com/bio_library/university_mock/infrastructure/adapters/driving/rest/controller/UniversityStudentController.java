@@ -2,7 +2,7 @@ package com.bio_library.university_mock.infrastructure.adapters.driving.rest.con
 
 import com.bio_library.university_mock.domain.enums.University;
 import com.bio_library.university_mock.domain.model.UniversityStudent;
-import com.bio_library.university_mock.domain.ports.in.IUniversityStudentServicePort;
+import com.bio_library.university_mock.application.ports.in.IUniversityStudentServicePort;
 import com.bio_library.university_mock.infrastructure.adapters.driving.rest.dto.response.ExceptionResponse;
 import com.bio_library.university_mock.infrastructure.adapters.driving.rest.dto.response.UniversityStudentResponse;
 import com.bio_library.university_mock.infrastructure.adapters.driving.rest.mapper.IUniversityStudentRestMapper;

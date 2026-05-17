@@ -1,14 +1,12 @@
 package com.bio_library.catalog.infrastructure.adapters.driving.rest.mapper;
 
-import com.bio_library.catalog.domain.model.Author;
 import com.bio_library.catalog.domain.model.Book;
-import com.bio_library.catalog.domain.model.License;
 import com.bio_library.catalog.domain.model.PageResult;
-import com.bio_library.catalog.infrastructure.adapters.driving.rest.dto.response.AuthorResponse;
+import com.bio_library.catalog.infrastructure.adapters.driving.rest.dto.request.BookRequest;
 import com.bio_library.catalog.infrastructure.adapters.driving.rest.dto.response.BookResponse;
-import com.bio_library.catalog.infrastructure.adapters.driving.rest.dto.response.LicenseResponse;
 import com.bio_library.catalog.infrastructure.adapters.driving.rest.dto.response.PageResponse;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -17,9 +15,12 @@ import java.util.stream.Collectors;
 public interface IBookRestMapper {
 
     BookResponse toResponse(Book book);
-    AuthorResponse toResponse(Author author);
-    LicenseResponse toResponse(License license);
+
     List<BookResponse> toResponseList(List<Book> books);
+
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "availableLicenses", ignore = true)
+    Book toBook(BookRequest request);
 
     default PageResponse<BookResponse> toPageResponse(PageResult<Book> pageResult) {
         return PageResponse.<BookResponse>builder()

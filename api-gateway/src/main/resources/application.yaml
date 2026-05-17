@@ -1,0 +1,28 @@
+server:
+  port: ${SERVER_PORT:8090}
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
+
+jwt:
+  secret: ${JWT_SECRET:586B633A7A4B3F4428472B4B6250655368566D597133743677397A2443264629}
+
+services:
+  user:    ${USER_URL:http://localhost:8080}
+  catalog: ${CATALOG_URL:http://localhost:8082}
+  loans:   ${LOANS_URL:http://localhost:8083}

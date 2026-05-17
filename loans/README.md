@@ -110,8 +110,8 @@ curl -X POST "http://localhost:8083/api/v1/loans" \
   "id": 1,
   "studentId": 42,
   "bookId": "64a1b2c3d4e5f6a7b8c9d0e1",
-  "startDate": "2026-05-11T10:00:00",
-  "endDate": "2026-05-21T10:00:00",
+  "startDate": "2026-05-11",
+  "endDate": "2026-05-21",
   "hasUsed": false,
   "active": true
 }
@@ -193,8 +193,8 @@ curl -X PATCH "http://localhost:8083/api/v1/loans/1/mark-used" \
   "id": 1,
   "studentId": 42,
   "bookId": "64a1b2c3d4e5f6a7b8c9d0e1",
-  "startDate": "2026-05-11T10:00:00",
-  "endDate": "2026-05-21T10:00:00",
+  "startDate": "2026-05-11",
+  "endDate": "2026-05-21",
   "hasUsed": true,
   "active": true
 }
@@ -236,14 +236,14 @@ curl -X PATCH "http://localhost:8083/api/v1/loans/1/return" \
   "id": 1,
   "studentId": 42,
   "bookId": "64a1b2c3d4e5f6a7b8c9d0e1",
-  "startDate": "2026-05-11T10:00:00",
-  "endDate": "2026-05-11T14:35:00",
+  "startDate": "2026-05-11",
+  "endDate": "2026-05-11",
   "hasUsed": true,
   "active": false
 }
 ```
 
-> `endDate` es actualizado al momento de la devolución. `active` pasa a `false`.
+> `endDate` es actualizado a la fecha de devolución. `active` pasa a `false`.
 
 **Response 403 — El préstamo no pertenece al estudiante**
 
@@ -307,8 +307,8 @@ curl -X GET "http://localhost:8083/api/v1/loans/my-loans?active=true&page=0&size
       "id": 3,
       "studentId": 42,
       "bookId": "64a1b2c3d4e5f6a7b8c9d0e1",
-      "startDate": "2026-05-11T10:00:00",
-      "endDate": "2026-05-21T10:00:00",
+      "startDate": "2026-05-11",
+      "endDate": "2026-05-21",
       "hasUsed": false,
       "active": true
     }
@@ -469,10 +469,10 @@ ILoanReturnRule (interface)
 ```java
 // LoanFactory
 public static Loan newLoan(Long studentId, String bookId) {
-    LocalDateTime now = LocalDateTime.now();
+    LocalDate today = LocalDate.now();
     return Loan.builder()
             .studentId(studentId).bookId(bookId)
-            .startDate(now).endDate(now.plusDays(LOAN_DURATION_DAYS))
+            .startDate(today).endDate(today.plusDays(LOAN_DURATION_DAYS))
             .hasUsed(false).active(true)
             .build();
 }

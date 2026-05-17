@@ -3,7 +3,7 @@ package com.bio_library.university_mock.infrastructure.adapters.driven.jpa.adapt
 import com.bio_library.university_mock.domain.constants.UniversityConstants;
 import com.bio_library.university_mock.domain.enums.University;
 import com.bio_library.university_mock.domain.model.UniversityStudent;
-import com.bio_library.university_mock.domain.ports.out.IUniversityStudentPersistencePort;
+import com.bio_library.university_mock.application.ports.out.IUniversityStudentPersistencePort;
 import com.bio_library.university_mock.infrastructure.adapters.driven.jpa.entity.UniversityStudentEntity;
 import com.bio_library.university_mock.infrastructure.adapters.driven.jpa.mapper.IUniversityStudentEntityMapper;
 import com.bio_library.university_mock.infrastructure.adapters.driven.jpa.repository.IUniversityStudentRepository;

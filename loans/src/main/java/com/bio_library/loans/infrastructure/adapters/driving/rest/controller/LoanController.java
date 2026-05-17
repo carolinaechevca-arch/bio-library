@@ -52,7 +52,7 @@ public class LoanController {
             Authentication authentication) {
         LoanUserPrincipal principal = (LoanUserPrincipal) authentication.getPrincipal();
         log.info("[REST] POST loan studentId={} bookId={}", principal.id(), request.bookId());
-        Loan loan = servicePort.createLoan(request.bookId(), principal.id(), principal.gpa());
+        Loan loan = servicePort.createLoan(request.bookId(), principal.id(), principal.gpa(), principal.email());
         return ResponseEntity.status(HttpStatus.CREATED).body(restMapper.toResponse(loan));
     }
 
@@ -70,7 +70,7 @@ public class LoanController {
             Authentication authentication) {
         LoanUserPrincipal principal = (LoanUserPrincipal) authentication.getPrincipal();
         log.info("[REST] PATCH return loanId={} studentId={}", id, principal.id());
-        return ResponseEntity.ok(restMapper.toResponse(servicePort.returnLoan(id, principal.id())));
+        return ResponseEntity.ok(restMapper.toResponse(servicePort.returnLoan(id, principal.id(), principal.email())));
     }
 
     @Operation(

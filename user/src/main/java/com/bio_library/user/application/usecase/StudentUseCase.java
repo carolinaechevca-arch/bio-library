@@ -4,6 +4,7 @@ import com.bio_library.user.application.ports.in.IStudentServicePort;
 import com.bio_library.user.application.ports.out.IPasswordEncoderPersistencePort;
 import com.bio_library.user.application.ports.out.IStudentPersistencePort;
 import com.bio_library.user.application.ports.out.IUniversityFeignClientPort;
+import com.bio_library.user.application.ports.out.IUserPersistencePort;
 import com.bio_library.user.domain.enums.University;
 import com.bio_library.user.domain.factory.StudentFactory;
 import com.bio_library.user.domain.model.Student;
@@ -15,7 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.List;
 
 @Slf4j
@@ -26,6 +27,7 @@ public class StudentUseCase implements IStudentServicePort {
     private final IPasswordEncoderPersistencePort passwordEncoderPort;
     private final StudentDomainService studentDomainService;
     private final IUniversityFeignClientPort universityServicePort;
+    private final IUserPersistencePort userPersistencePort;
     private final List<StudentValidationStrategy> strategies;
 
     @Override
@@ -50,7 +52,8 @@ public class StudentUseCase implements IStudentServicePort {
     }
 
     @Override
-    public Page<Student> getStudents(University university, Pageable pageable) {
+    public Page<Student> getStudents(String adminEmail, Pageable pageable) {
+        University university = userPersistencePort.findByEmail(adminEmail).getUniversity();
         log.info("[LIST] Fetching students university={} page={}", university, pageable.getPageNumber());
         return studentPersistencePort.findAll(university, pageable);
     }
@@ -63,7 +66,7 @@ public class StudentUseCase implements IStudentServicePort {
     }
 
     @Override
-    public Student updateSanction(Long userId, Boolean active, LocalDateTime sanctionEndDate) {
+    public Student updateSanction(Long userId, Boolean active, LocalDate sanctionEndDate) {
         log.info("[SANCTION] Updating sanction userId={} active={}", userId, active);
         Student student = studentDomainService.validateStudentExists(
                 studentPersistencePort.findByUserId(userId).orElse(null), userId);

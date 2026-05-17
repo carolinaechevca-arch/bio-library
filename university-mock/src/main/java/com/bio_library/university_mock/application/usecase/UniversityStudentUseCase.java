@@ -2,8 +2,8 @@ package com.bio_library.university_mock.application.usecase;
 
 import com.bio_library.university_mock.domain.enums.University;
 import com.bio_library.university_mock.domain.model.UniversityStudent;
-import com.bio_library.university_mock.domain.ports.in.IUniversityStudentServicePort;
-import com.bio_library.university_mock.domain.ports.out.IUniversityStudentPersistencePort;
+import com.bio_library.university_mock.application.ports.in.IUniversityStudentServicePort;
+import com.bio_library.university_mock.application.ports.out.IUniversityStudentPersistencePort;
 import com.bio_library.university_mock.domain.service.UniversityStudentDomainService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

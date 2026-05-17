@@ -5,6 +5,7 @@ import com.bio_library.user.domain.model.Student;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface IStudentPersistencePort {
@@ -15,4 +16,5 @@ public interface IStudentPersistencePort {
     Optional<Student> findByUserId(Long userId);
     Page<Student> findAll(University university, Pageable pageable);
     Student updateStudent(Student student);
+    List<Student> findExpiredSanctions();
 }

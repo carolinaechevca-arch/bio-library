@@ -5,7 +5,6 @@ import com.bio_library.catalog.domain.enums.LoanAction;
 import com.bio_library.catalog.domain.exceptions.BookNotFoundException;
 import com.bio_library.catalog.domain.exceptions.LoanLimitExceededException;
 import com.bio_library.catalog.domain.model.Book;
-import com.bio_library.catalog.domain.model.License;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Optional;
@@ -20,30 +19,32 @@ public class BookDomainService {
         });
     }
 
+    public Book validateBookExistsByIsbn(Book book, String isbn) {
+        return Optional.ofNullable(book).orElseThrow(() -> {
+            log.warn("Book with isbn {} was not found", isbn);
+            return new BookNotFoundException(String.format(DomainConstants.BOOK_NOT_FOUND_BY_ISBN, isbn));
+        });
+    }
+
     public Book validateAndUpdateLoanCount(Book book, LoanAction action) {
-        License license = book.getLicense();
         if (action == LoanAction.INCREMENT) {
-            if (license.getActiveLoanCount() >= license.getMaxConcurrentLoans()) {
-                log.warn("Loan limit exceeded for book id={}, max={}", book.getId(), license.getMaxConcurrentLoans());
+            if (book.getAvailableLicenses() <= 0) {
+                log.warn("No available licenses for book id={}, total={}", book.getId(), book.getTotalLicenses());
                 throw new LoanLimitExceededException(
-                        String.format(DomainConstants.LOAN_LIMIT_EXCEEDED, license.getMaxConcurrentLoans()));
+                        String.format(DomainConstants.LOAN_LIMIT_EXCEEDED, book.getTotalLicenses()));
             }
-            log.info("Incrementing loan count for book id={}", book.getId());
+            log.info("Decrementing available licenses for book id={}", book.getId());
             return book.toBuilder()
-                    .license(license.toBuilder()
-                            .activeLoanCount(license.getActiveLoanCount() + 1)
-                            .build())
+                    .availableLicenses(book.getAvailableLicenses() - 1)
                     .build();
         } else {
-            if (license.getActiveLoanCount() <= 0) {
-                log.warn("Loan count already zero for book id={}", book.getId());
-                throw new LoanLimitExceededException(DomainConstants.LOAN_COUNT_ALREADY_ZERO);
+            if (book.getAvailableLicenses() >= book.getTotalLicenses()) {
+                log.warn("All licenses already available for book id={}", book.getId());
+                throw new LoanLimitExceededException(DomainConstants.LOAN_COUNT_ALREADY_FULL);
             }
-            log.info("Decrementing loan count for book id={}", book.getId());
+            log.info("Incrementing available licenses for book id={}", book.getId());
             return book.toBuilder()
-                    .license(license.toBuilder()
-                            .activeLoanCount(license.getActiveLoanCount() - 1)
-                            .build())
+                    .availableLicenses(book.getAvailableLicenses() + 1)
                     .build();
         }
     }

@@ -1,6 +1,7 @@
 package com.bio_library.user.infrastructure.configuration.bean;
 
 import com.bio_library.user.application.ports.in.IAuthServicePort;
+import com.bio_library.user.application.ports.in.ISanctionSchedulerServicePort;
 import com.bio_library.user.application.ports.in.IStudentServicePort;
 import com.bio_library.user.application.ports.in.IUserProfileServicePort;
 import com.bio_library.user.application.ports.out.IJwtPersistencePort;
@@ -9,6 +10,7 @@ import com.bio_library.user.application.ports.out.IStudentPersistencePort;
 import com.bio_library.user.application.ports.out.IUniversityFeignClientPort;
 import com.bio_library.user.application.ports.out.IUserPersistencePort;
 import com.bio_library.user.application.usecase.AuthUseCase;
+import com.bio_library.user.application.usecase.SanctionSchedulerUseCase;
 import com.bio_library.user.application.usecase.StudentUseCase;
 import com.bio_library.user.application.usecase.UserProfileUseCase;
 import com.bio_library.user.domain.service.StudentDomainService;
@@ -43,6 +45,7 @@ public class BeanConfiguration {
             IStudentPersistencePort studentPersistencePort,
             IPasswordEncoderPersistencePort passwordEncoderPort,
             IUniversityFeignClientPort universityServicePort,
+            IUserPersistencePort userPersistencePort,
             List<StudentValidationStrategy> strategies
     ) {
         return new StudentUseCase(
@@ -50,10 +53,16 @@ public class BeanConfiguration {
                 passwordEncoderPort,
                 technicianDomainService(),
                 universityServicePort,
+                userPersistencePort,
                 strategies
         );
     }
 
+
+    @Bean
+    public ISanctionSchedulerServicePort sanctionSchedulerServicePort(IStudentPersistencePort studentPersistencePort) {
+        return new SanctionSchedulerUseCase(studentPersistencePort);
+    }
 
     @Bean
     public IPasswordEncoderPersistencePort passwordEncoderPersistencePort(PasswordEncoder passwordEncoder) {

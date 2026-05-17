@@ -17,6 +17,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 
 import static com.bio_library.user.infrastructure.adapters.driven.util.PersistenceConstants.*;
@@ -94,5 +96,12 @@ public class StudentPersistenceAdapter implements IStudentPersistencePort {
                 .sanctionEndDate(student.getSanctionEndDate())
                 .build();
         return studentEntityMapper.toDomain(studentRepository.save(updated));
+    }
+
+    @Override
+    public List<Student> findExpiredSanctions() {
+        log.info("[STUDENT-DB] Finding students with expired sanctions");
+        return studentRepository.findByHasSanctionTrueAndSanctionEndDateBefore(LocalDate.now())
+                .stream().map(studentEntityMapper::toDomain).toList();
     }
 }

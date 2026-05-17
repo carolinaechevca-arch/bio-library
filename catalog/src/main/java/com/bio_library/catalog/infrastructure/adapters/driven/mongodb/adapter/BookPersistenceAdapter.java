@@ -1,6 +1,7 @@
 package com.bio_library.catalog.infrastructure.adapters.driven.mongodb.adapter;
 
 import com.bio_library.catalog.domain.constants.DomainConstants;
+import com.bio_library.catalog.domain.enums.Category;
 import com.bio_library.catalog.domain.model.Book;
 import com.bio_library.catalog.domain.model.PageResult;
 import com.bio_library.catalog.application.ports.out.IBookPersistencePort;
@@ -22,9 +23,20 @@ public class BookPersistenceAdapter implements IBookPersistencePort {
     private final IBookDocumentMapper mapper;
 
     @Override
-    public PageResult<Book> findAll(int page, int size) {
-        log.info(DomainConstants.LOG_FIND_ALL, page, size);
-        Page<BookDocument> result = bookRepository.findAll(PageRequest.of(page, size));
+    public Book save(Book book) {
+        log.info(DomainConstants.LOG_SAVE, book.getId());
+        BookDocument saved = bookRepository.save(mapper.toDocument(book));
+        log.info(DomainConstants.LOG_SAVED, saved.getId());
+        return mapper.toDomain(saved);
+    }
+
+    @Override
+    public PageResult<Book> findAll(Category category, int page, int size) {
+        log.info(DomainConstants.LOG_FIND_ALL, category, page, size);
+        PageRequest pageable = PageRequest.of(page, size);
+        Page<BookDocument> result = (category != null)
+                ? bookRepository.findByCategory(category, pageable)
+                : bookRepository.findAll(pageable);
         return PageResult.<Book>builder()
                 .content(mapper.toDomainList(result.getContent()))
                 .page(result.getNumber())
@@ -37,16 +49,23 @@ public class BookPersistenceAdapter implements IBookPersistencePort {
     @Override
     public Book findById(String id) {
         log.info(DomainConstants.LOG_FIND_BY_ID, id);
-        return bookRepository.findById(id)
-                .map(mapper::toDomain)
-                .orElse(null);
+        return bookRepository.findById(id).map(mapper::toDomain).orElse(null);
     }
 
     @Override
-    public Book save(Book book) {
-        log.info(DomainConstants.LOG_SAVE, book.getId());
-        BookDocument saved = bookRepository.save(mapper.toDocument(book));
-        log.info(DomainConstants.LOG_SAVED, saved.getId());
-        return mapper.toDomain(saved);
+    public Book findByIsbn(String isbn) {
+        log.info(DomainConstants.LOG_FIND_BY_ISBN, isbn);
+        return bookRepository.findByIsbn(isbn).map(mapper::toDomain).orElse(null);
+    }
+
+    @Override
+    public void deleteById(String id) {
+        log.info(DomainConstants.LOG_DELETE, id);
+        bookRepository.deleteById(id);
+    }
+
+    @Override
+    public boolean existsByIsbn(String isbn) {
+        return bookRepository.existsByIsbn(isbn);
     }
 }

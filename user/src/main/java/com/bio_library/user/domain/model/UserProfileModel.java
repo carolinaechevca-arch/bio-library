@@ -5,7 +5,7 @@ import com.bio_library.user.domain.enums.University;
 import lombok.Builder;
 import lombok.Value;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 @Value
 @Builder
@@ -21,7 +21,7 @@ public class UserProfileModel {
     String carnet;
     Double gpa;
     Boolean hasSanction;
-    LocalDateTime sanctionEndDate;
+    LocalDate sanctionEndDate;
     Integer activeLoans;
 
     public static UserProfileModel from(Student student) {

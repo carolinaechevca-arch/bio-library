@@ -1,5 +1,6 @@
 package com.bio_library.catalog.infrastructure.configuration.exceptionhandler;
 
+import com.bio_library.catalog.domain.exceptions.BookAlreadyExistsException;
 import com.bio_library.catalog.domain.exceptions.BookNotFoundException;
 import com.bio_library.catalog.domain.exceptions.LoanLimitExceededException;
 import com.bio_library.catalog.infrastructure.adapters.driving.rest.dto.response.ExceptionResponse;
@@ -14,6 +15,13 @@ import java.util.stream.Collectors;
 
 @ControllerAdvice
 public class ControllerAdvisor {
+
+    @ExceptionHandler(BookAlreadyExistsException.class)
+    public ResponseEntity<ExceptionResponse> handleBookAlreadyExistsException(BookAlreadyExistsException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(new ExceptionResponse(
+                ex.getMessage(), HttpStatus.CONFLICT.getReasonPhrase(),
+                LocalDateTime.now(), HttpStatus.CONFLICT.value()));
+    }
 
     @ExceptionHandler(BookNotFoundException.class)
     public ResponseEntity<ExceptionResponse> handleBookNotFoundException(BookNotFoundException ex) {

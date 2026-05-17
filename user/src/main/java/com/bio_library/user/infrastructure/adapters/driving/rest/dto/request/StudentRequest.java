@@ -18,14 +18,6 @@ public record StudentRequest(
         @NotBlank(message = DNI_REQUIRED_EXCEPTION_MESSAGE)
         String dni,
 
-        @NotBlank(message = NAME_REQUIRED_EXCEPTION_MESSAGE)
-        @Size(max = NAME_MAX_LENGTH, message = NAME_LENGTH_EXCEPTION_MESSAGE)
-        String name,
-
-        @NotBlank(message = LAST_NAME_REQUIRED_EXCEPTION_MESSAGE)
-        @Size(max = LAST_NAME_MAX_LENGTH, message = LAST_NAME_LENGTH_EXCEPTION_MESSAGE)
-        String lastName,
-
         @NotBlank(message = EMAIL_REQUIRED_EXCEPTION_MESSAGE)
         @Email(message = EMAIL_INVALID_EXCEPTION_MESSAGE)
         @Size(max = EMAIL_MAX_LENGTH, message = EMAIL_LENGTH_EXCEPTION_MESSAGE)

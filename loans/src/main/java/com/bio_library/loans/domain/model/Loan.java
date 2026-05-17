@@ -3,7 +3,7 @@ package com.bio_library.loans.domain.model;
 import lombok.Builder;
 import lombok.Value;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 @Value
 @Builder(toBuilder = true)
@@ -11,8 +11,8 @@ public class Loan {
     Long id;
     Long studentId;
     String bookId;
-    LocalDateTime startDate;
-    LocalDateTime endDate;
+    LocalDate startDate;
+    LocalDate endDate;
     Boolean hasUsed;
     Boolean active;
 
@@ -21,6 +21,6 @@ public class Loan {
     }
 
     public Loan withReturned() {
-        return toBuilder().active(false).endDate(LocalDateTime.now()).build();
+        return toBuilder().active(false).endDate(LocalDate.now()).build();
     }
 }

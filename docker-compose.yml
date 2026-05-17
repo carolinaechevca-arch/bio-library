@@ -1,0 +1,202 @@
+services:
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: bio-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - bio-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d biolibrary"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mongodb:
+    image: mongo:7
+    container_name: bio-mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+      - ./mongo-init:/docker-entrypoint-initdb.d:ro
+      - ./catalog/src/main/resources/data:/seed:ro
+    networks:
+      - bio-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: bio-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS}
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - bio-network
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+
+  university-mock:
+    build:
+      context: ./university-mock
+      dockerfile: Dockerfile
+    container_name: bio-university-mock
+    ports:
+      - "8081:8081"
+    environment:
+      DB_HOST: postgres
+      DB_PORT: ${POSTGRES_PORT}
+      DB_NAME: ${POSTGRES_DB}
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_SCHEMA: university
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - bio-network
+
+  user:
+    build:
+      context: ./user
+      dockerfile: Dockerfile
+    container_name: bio-user
+    ports:
+      - "8080:8080"
+    environment:
+      DB_HOST: postgres
+      DB_PORT: ${POSTGRES_PORT}
+      DB_USERNAME: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_SCHEMA: users
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRATION: ${JWT_EXPIRATION}
+      UNIVERSITY_MOCK_URL: ${UNIVERSITY_MOCK_URL}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      university-mock:
+        condition: service_started
+    networks:
+      - bio-network
+
+  catalog:
+    build:
+      context: ./catalog
+      dockerfile: Dockerfile
+    container_name: bio-catalog
+    ports:
+      - "8082:8082"
+    environment:
+      MONGODB_URI: ${MONGODB_URI}
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - bio-network
+
+  notification:
+    build:
+      context: ./notification
+      dockerfile: Dockerfile
+    container_name: bio-notification
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_USER: ${RABBITMQ_USER}
+      RABBITMQ_PASS: ${RABBITMQ_PASS}
+      RABBITMQ_EXCHANGE: ${RABBITMQ_EXCHANGE}
+      RABBITMQ_QUEUE: ${RABBITMQ_QUEUE}
+      RABBITMQ_ROUTING_KEY: ${RABBITMQ_ROUTING_KEY}
+      TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID}
+      TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN}
+      TWILIO_PHONE_NUMBER: ${TWILIO_PHONE_NUMBER}
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - bio-network
+
+  loans:
+    build:
+      context: ./loans
+      dockerfile: Dockerfile
+    container_name: bio-loans
+    ports:
+      - "8083:8083"
+    environment:
+      DB_HOST: postgres
+      DB_PORT: ${POSTGRES_PORT}
+      DB_USERNAME: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_SCHEMA: loans
+      JWT_SECRET: ${JWT_SECRET}
+      CATALOG_URL: ${CATALOG_URL}
+      USER_URL: ${USER_URL}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_USER: ${RABBITMQ_USER}
+      RABBITMQ_PASS: ${RABBITMQ_PASS}
+      RABBITMQ_EXCHANGE: ${RABBITMQ_EXCHANGE}
+      RABBITMQ_ROUTING_KEY: ${RABBITMQ_ROUTING_KEY}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      catalog:
+        condition: service_started
+      user:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - bio-network
+
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    container_name: bio-api-gateway
+    ports:
+      - "8090:8090"
+    environment:
+      JWT_SECRET: ${JWT_SECRET}
+      USER_URL: ${USER_URL}
+      CATALOG_URL: ${CATALOG_URL}
+      LOANS_URL: ${LOANS_URL}
+    depends_on:
+      user:
+        condition: service_started
+      catalog:
+        condition: service_started
+      loans:
+        condition: service_started
+    networks:
+      - bio-network
+
+
+volumes:
+  postgres_data:
+  mongo_data:
+  rabbitmq_data:
+
+networks:
+  bio-network:
+    driver: bridge

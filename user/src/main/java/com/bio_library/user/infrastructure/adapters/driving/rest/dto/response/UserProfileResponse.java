@@ -4,7 +4,7 @@ import com.bio_library.user.domain.enums.Role;
 import com.bio_library.user.domain.enums.University;
 import lombok.Builder;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 @Builder
 public record UserProfileResponse(
@@ -19,6 +19,6 @@ public record UserProfileResponse(
         String carnet,
         Double gpa,
         Boolean hasSanction,
-        LocalDateTime sanctionEndDate,
+        LocalDate sanctionEndDate,
         Integer activeLoans
 ) {}

@@ -7,6 +7,9 @@ public final class DomainConstants {
     }
 
     public static final int LOAN_DURATION_DAYS = 10;
+    public static final int USAGE_WARNING_DAYS = 2;
+    public static final int USAGE_REVOCATION_DAYS = 3;
+    public static final int LOAN_MAX_DURATION_DAYS = 15;
 
     public static final String LOAN_NOT_FOUND = "Loan with id %d was not found.";
     public static final String BOOK_NOT_FOUND = "Book with id %s was not found in the catalog.";

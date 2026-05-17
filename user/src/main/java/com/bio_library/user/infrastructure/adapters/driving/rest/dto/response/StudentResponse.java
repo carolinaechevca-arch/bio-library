@@ -8,7 +8,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 @Data
 @Builder
@@ -22,6 +22,6 @@ public class StudentResponse {
     private University university;
     private Double gpa;
     private Boolean hasSanction;
-    private LocalDateTime sanctionEndDate;
+    private LocalDate sanctionEndDate;
     private Integer activeLoans;
 }

@@ -13,7 +13,6 @@ spring:
     username: ${DB_USERNAME:postgres}
     password: ${DB_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
-
   jpa:
     hibernate:
       ddl-auto: update
@@ -26,12 +25,24 @@ spring:
           time_zone: UTC
         hbm2ddl:
           create_namespaces: true
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:guest}
+    password: ${RABBITMQ_PASS:guest}
 
 jwt:
   secret: ${JWT_SECRET:586B633A7A4B3F4428472B4B6250655368566D597133743677397A2443264629}
 
 catalog:
   url: ${CATALOG_URL:http://localhost:8082}
+
+user:
+  url: ${USER_URL:http://localhost:8080}
+
+rabbitmq:
+  exchange: ${RABBITMQ_EXCHANGE:bio.library.exchange}
+  routing-key: ${RABBITMQ_ROUTING_KEY:loan.event}
 
 springdoc:
   swagger-ui:
