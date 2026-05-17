@@ -107,3 +107,7 @@ Cuando el JWT es válido, el gateway añade a la petición saliente:
 { "status": 401, "message": "Token expired or invalid" }
 { "status": 403, "message": "Access denied" }
 ```
+
+## Métricas
+
+Expone `/actuator/prometheus` en el puerto `8090` para scraping con Prometheus.

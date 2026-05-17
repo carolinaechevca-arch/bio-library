@@ -199,6 +199,12 @@ Al iniciar, el microservicio carga automáticamente los datos de muestra desde `
 
 ---
 
+## Métricas
+
+Expone `/actuator/prometheus` en el puerto `8081` para scraping con Prometheus.
+
+---
+
 ## Swagger / API Docs
 
 Una vez levantado el servicio:

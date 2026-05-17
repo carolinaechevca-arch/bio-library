@@ -359,6 +359,18 @@ SERVER_PORT=8082 MONGODB_URI=mongodb://my-mongo:27017/biolibrary ./gradlew bootR
 
 ---
 
+## CORS
+
+Todos los orígenes, métodos y cabeceras están permitidos mediante `CorsConfiguration` (`WebMvcConfigurer`). Esto permite que el frontend y otros servicios llamen directamente a `catalog` sin restricciones de origen.
+
+---
+
+## Métricas
+
+Expone `/actuator/prometheus` en el puerto `8082` para scraping con Prometheus.
+
+---
+
 ## Swagger / API Docs
 
 | Recurso | URL |
