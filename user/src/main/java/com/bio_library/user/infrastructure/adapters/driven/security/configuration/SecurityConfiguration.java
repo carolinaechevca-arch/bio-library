@@ -27,6 +27,7 @@ public class SecurityConfiguration {
     private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
 
     private static final String[] PUBLIC_ENDPOINTS = {
+            "/actuator/**",
             "/api/v1/auth/login",
             "/api/v1/students/create",
             "/api/v1/internal/**",

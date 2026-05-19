@@ -25,6 +25,7 @@ public class SecurityConfiguration {
     private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
 
     private static final String[] PUBLIC_ENDPOINTS = {
+            "/actuator/**",
             "/v3/api-docs/**",
             "/swagger-ui/**",
             "/swagger-ui.html"
