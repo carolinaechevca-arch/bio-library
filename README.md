@@ -213,23 +213,50 @@ docker compose up --build
 
 ## Observabilidad
 
+### Grafana
+
+Abre http://localhost:3001 (admin/admin). El datasource de Prometheus ya esta pre-configurado.
+
+**Importar dashboard de JVM (metricas de cada servicio):**
+- Dashboards → New → Import
+- Ingresa el ID `4701` → Load
+- En "Prometheus" selecciona el datasource → Import
+
+**Importar dashboard de Spring Boot:**
+- Mismo proceso con ID `12685`
+
 ### Prometheus
 
 Abre http://localhost:9090 → **Status → Targets** para ver el estado de scraping de los 6 servicios.
 
-Métricas útiles:
+**Metricas utiles:**
 ```
 http_server_requests_seconds_count
+http_server_requests_seconds_sum
 jvm_memory_used_bytes
+jvm_threads_live_threads
 process_cpu_usage
 ```
-
-### Grafana
-
-Abre http://localhost:3001 (admin/admin). El datasource de Prometheus ya está pre-configurado.
-
-Para importar un dashboard de JVM: **Dashboards → Import → ID `4701`**.
 
 ### Jaeger
 
 Abre http://localhost:16686 para ver trazas distribuidas entre servicios.
+
+1. En "Service" selecciona el servicio (ej: `loans`)
+2. Clic en "Find Traces"
+3. Clic en una traza para ver el flujo completo entre microservicios
+
+### RabbitMQ
+
+Abre http://localhost:15672. Credenciales definidas en `.env`: `RABBITMQ_USER` / `RABBITMQ_PASS` (por defecto `guest` / `guest`).
+
+- **Queues:** ver mensajes pendientes y procesados
+- **Exchanges:** ver el exchange configurado para notificaciones
+- **Connections:** ver que servicios estan conectados
+
+### Twilio
+
+Abre https://console.twilio.com con las credenciales de la cuenta configuradas en `.env`.
+
+- **Monitor → Logs → Messaging:** ver SMS enviados y su estado de entrega
+- **Monitor → Errors:** ver errores de envio si los hay
