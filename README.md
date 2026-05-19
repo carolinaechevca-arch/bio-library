@@ -120,7 +120,7 @@ docker compose up -d loans
 | Recurso | URL | Credenciales |
 |---|---|---|
 | Prometheus | http://localhost:9090 | — |
-| Grafana | http://localhost:3000 | admin / admin |
+| Grafana | http://localhost:3001 | admin / admin |
 | Jaeger (trazas) | http://localhost:16686 | — |
 
 ---
@@ -187,7 +187,7 @@ Infraestructura:
 
 Observabilidad:
   Prometheus :9090  (scrape de todos los servicios)
-  Grafana    :3000  (dashboards — datasource Prometheus pre-configurado)
+  Grafana    :3001  (dashboards — datasource Prometheus pre-configurado)
   Jaeger     :16686 (trazas distribuidas OTLP)
 ```
 
@@ -226,7 +226,7 @@ process_cpu_usage
 
 ### Grafana
 
-Abre http://localhost:3000 (admin/admin). El datasource de Prometheus ya está pre-configurado.
+Abre http://localhost:3001 (admin/admin). El datasource de Prometheus ya está pre-configurado.
 
 Para importar un dashboard de JVM: **Dashboards → Import → ID `4701`**.
 
