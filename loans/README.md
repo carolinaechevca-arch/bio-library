@@ -17,20 +17,20 @@ Sus responsabilidades son:
 
 ## Stack tecnológico
 
-| Tecnología | Versión |
-|---|---|
-| Java | 21 |
-| Spring Boot | 3.4.3 |
-| Spring Security | — |
-| JWT (JJWT) | 0.11.5 |
-| Spring Cloud OpenFeign | 2024.0.1 |
-| Spring Data JPA | — |
-| PostgreSQL | — |
-| Spring AMQP (RabbitMQ) | — |
-| MapStruct | 1.6.3 |
-| Lombok | — |
-| SpringDoc OpenAPI (Swagger) | 2.8.4 |
-| Gradle | — |
+| Tecnología                  | Versión  |
+| --------------------------- | -------- |
+| Java                        | 21       |
+| Spring Boot                 | 3.4.3    |
+| Spring Security             | —        |
+| JWT (JJWT)                  | 0.11.5   |
+| Spring Cloud OpenFeign      | 2024.0.1 |
+| Spring Data JPA             | —        |
+| PostgreSQL                  | —        |
+| Spring AMQP (RabbitMQ)      | —        |
+| MapStruct                   | 1.6.3    |
+| Lombok                      | —        |
+| SpringDoc OpenAPI (Swagger) | 2.8.4    |
+| Gradle                      | —        |
 
 ---
 
@@ -63,25 +63,25 @@ Scheduler:
 
 ## Dependencias con otros micros
 
-| Micro | Tipo | Propósito |
-|---|---|---|
-| `user` | JWT compartido | El token contiene `id`, `role` y `gpa` del estudiante |
-| `catalog` | OpenFeign | `PATCH /api/v1/books/{id}/loan-count` — actualiza licencias disponibles |
-| `user` | OpenFeign (interno) | `GET /api/v1/internal/students/{id}/email` — obtiene email, teléfono y estado de sanción |
-| `notification` | RabbitMQ | Publica eventos de préstamo para envío de SMS |
+| Micro          | Tipo                | Propósito                                                                                |
+| -------------- | ------------------- | ---------------------------------------------------------------------------------------- |
+| `user`         | JWT compartido      | El token contiene `id`, `role` y `gpa` del estudiante                                    |
+| `catalog`      | OpenFeign           | `PATCH /api/v1/books/{id}/loan-count` — actualiza licencias disponibles                  |
+| `user`         | OpenFeign (interno) | `GET /api/v1/internal/students/{id}/email` — obtiene email, teléfono y estado de sanción |
+| `notification` | RabbitMQ            | Publica eventos de préstamo para envío de SMS                                            |
 
 ---
 
 ## Reglas de negocio
 
-| Regla | Respuesta |
-|---|---|
-| **Sanción activa** | Si el estudiante tiene sanción activa, se bloquea el préstamo → 403 |
-| **Bloqueo por GPA** | Si `gpa < 3.2` y el estudiante ya tiene ≥ 1 préstamo activo → 422 |
-| **Límite de licencias** | El catálogo rechaza si `availableLicenses == 0` → 422 |
-| **Propiedad del préstamo** | Solo el dueño puede devolver su préstamo → 403 |
-| **Estado activo** | Un préstamo ya devuelto no puede devolverse de nuevo → 409 |
-| **Duración** | Todo préstamo tiene una duración fija de **10 días** desde la creación |
+| Regla                      | Respuesta                                                              |
+| -------------------------- | ---------------------------------------------------------------------- |
+| **Sanción activa**         | Si el estudiante tiene sanción activa, se bloquea el préstamo → 403    |
+| **Bloqueo por GPA**        | Si `gpa < 3.2` y el estudiante ya tiene ≥ 1 préstamo activo → 422      |
+| **Límite de licencias**    | El catálogo rechaza si `availableLicenses == 0` → 422                  |
+| **Propiedad del préstamo** | Solo el dueño puede devolver su préstamo → 403                         |
+| **Estado activo**          | Un préstamo ya devuelto no puede devolverse de nuevo → 409             |
+| **Duración**               | Todo préstamo tiene una duración fija de **10 días** desde la creación |
 
 ---
 
@@ -89,23 +89,23 @@ Scheduler:
 
 Los tres jobs se ejecutan cada **5 minutos** (configurable vía `fixedRate`).
 
-| Job | Condición | Acción |
-|---|---|---|
-| `processUsageWarnings` | Préstamo activo, sin usar, con ≥ 2 días desde inicio | Envía SMS de advertencia |
-| `processUsageRevocations` | Préstamo activo, sin usar, con ≥ 3 días desde inicio | Devuelve el libro automáticamente + SMS |
-| `processExpiredLoans` | Préstamo activo con ≥ 15 días desde inicio | Cierra el préstamo automáticamente + SMS |
+| Job                       | Condición                                                | Acción                                   |
+| ------------------------- | -------------------------------------------------------- | ---------------------------------------- |
+| `processUsageWarnings`    | Préstamo activo, sin usar, entre 2 y 3 días desde inicio | Envía SMS de advertencia                 |
+| `processUsageRevocations` | Préstamo activo, sin usar, con ≥ 3 días desde inicio     | Devuelve el libro automáticamente + SMS  |
+| `processExpiredLoans`     | Préstamo activo con ≥ 15 días desde inicio               | Cierra el préstamo automáticamente + SMS |
 
 ---
 
 ## Eventos RabbitMQ publicados
 
-| Evento | Disparado en |
-|---|---|
-| `BOOK_BORROWED` | `createLoan()` |
-| `BOOK_RETURNED` | `returnLoan()` |
-| `LOAN_USAGE_WARNING` | Job `processUsageWarnings` |
+| Evento               | Disparado en                  |
+| -------------------- | ----------------------------- |
+| `BOOK_BORROWED`      | `createLoan()`                |
+| `BOOK_RETURNED`      | `returnLoan()`                |
+| `LOAN_USAGE_WARNING` | Job `processUsageWarnings`    |
 | `LOAN_USAGE_REVOKED` | Job `processUsageRevocations` |
-| `LOAN_EXPIRED` | Job `processExpiredLoans` |
+| `LOAN_EXPIRED`       | Job `processExpiredLoans`     |
 
 Cada evento incluye `studentId`, `studentEmail`, `studentPhone` y `bookId`.
 
@@ -146,14 +146,14 @@ Crea un nuevo préstamo para el estudiante autenticado.
 
 **Respuestas de error**
 
-| Código | Causa |
-|---|---|
-| 400 | `bookId` faltante |
-| 401 | Token ausente o expirado |
-| 403 | Estudiante con sanción activa |
-| 404 | Libro no existe en catálogo |
-| 422 | Sin licencias disponibles |
-| 422 | GPA < 3.2 con préstamo activo |
+| Código | Causa                         |
+| ------ | ----------------------------- |
+| 400    | `bookId` faltante             |
+| 401    | Token ausente o expirado      |
+| 403    | Estudiante con sanción activa |
+| 404    | Libro no existe en catálogo   |
+| 422    | Sin licencias disponibles     |
+| 422    | GPA < 3.2 con préstamo activo |
 
 **Response 403 — Estudiante sancionado**
 
@@ -185,11 +185,11 @@ Devuelve un libro. Solo el estudiante dueño del préstamo puede ejecutar esta a
 
 **Respuestas de error**
 
-| Código | Causa |
-|---|---|
-| 403 | Préstamo no pertenece al estudiante |
-| 404 | Préstamo no encontrado |
-| 409 | Préstamo ya devuelto |
+| Código | Causa                               |
+| ------ | ----------------------------------- |
+| 403    | Préstamo no pertenece al estudiante |
+| 404    | Préstamo no encontrado              |
+| 409    | Préstamo ya devuelto                |
 
 ---
 
@@ -199,13 +199,13 @@ Devuelve los préstamos del estudiante autenticado (paginados).
 
 **Query Parameters**
 
-| Parámetro | Tipo | Default | Descripción |
-|---|---|---|---|
-| `active` | Boolean | — | `true` = activos, `false` = devueltos, omitir = todos |
-| `page` | Integer | `0` | Número de página |
-| `size` | Integer | `10` | Tamaño de página |
-| `sortBy` | String | `startDate` | `startDate`, `endDate`, `bookId` |
-| `sortDir` | String | `desc` | `asc` o `desc` |
+| Parámetro | Tipo    | Default     | Descripción                                           |
+| --------- | ------- | ----------- | ----------------------------------------------------- |
+| `active`  | Boolean | —           | `true` = activos, `false` = devueltos, omitir = todos |
+| `page`    | Integer | `0`         | Número de página                                      |
+| `size`    | Integer | `10`        | Tamaño de página                                      |
+| `sortBy`  | String  | `startDate` | `startDate`, `endDate`, `bookId`                      |
+| `sortDir` | String  | `desc`      | `asc` o `desc`                                        |
 
 ---
 
@@ -219,31 +219,31 @@ Mismos query params que `/my-loans`.
 
 ## Variables de entorno
 
-| Variable | Default | Descripción |
-|---|---|---|
-| `SERVER_PORT` | `8083` | Puerto HTTP del servidor |
-| `DB_HOST` | `localhost` | Host de PostgreSQL |
-| `DB_PORT` | `5432` | Puerto de PostgreSQL |
-| `DB_USERNAME` | `postgres` | Usuario de PostgreSQL |
-| `DB_PASSWORD` | `postgres` | Contraseña de PostgreSQL |
-| `DB_SCHEMA` | `loans` | Schema donde se crea la tabla `loans` |
-| `JWT_SECRET` | `586B633A...` | Clave secreta para validar JWTs (debe coincidir con `user`) |
-| `CATALOG_URL` | `http://localhost:8082` | URL base del microservicio `catalog` |
-| `USER_URL` | `http://localhost:8080` | URL base del microservicio `user` |
-| `RABBITMQ_HOST` | `localhost` | Host de RabbitMQ |
-| `RABBITMQ_USER` | `guest` | Usuario de RabbitMQ |
-| `RABBITMQ_PASS` | `guest` | Contraseña de RabbitMQ |
-| `RABBITMQ_EXCHANGE` | `bio.library.exchange` | Exchange donde se publican eventos |
-| `RABBITMQ_ROUTING_KEY` | `loan.event` | Routing key de los eventos |
+| Variable               | Default                 | Descripción                                                 |
+| ---------------------- | ----------------------- | ----------------------------------------------------------- |
+| `SERVER_PORT`          | `8083`                  | Puerto HTTP del servidor                                    |
+| `DB_HOST`              | `localhost`             | Host de PostgreSQL                                          |
+| `DB_PORT`              | `5432`                  | Puerto de PostgreSQL                                        |
+| `DB_USERNAME`          | `postgres`              | Usuario de PostgreSQL                                       |
+| `DB_PASSWORD`          | `postgres`              | Contraseña de PostgreSQL                                    |
+| `DB_SCHEMA`            | `loans`                 | Schema donde se crea la tabla `loans`                       |
+| `JWT_SECRET`           | `586B633A...`           | Clave secreta para validar JWTs (debe coincidir con `user`) |
+| `CATALOG_URL`          | `http://localhost:8082` | URL base del microservicio `catalog`                        |
+| `USER_URL`             | `http://localhost:8080` | URL base del microservicio `user`                           |
+| `RABBITMQ_HOST`        | `localhost`             | Host de RabbitMQ                                            |
+| `RABBITMQ_USER`        | `guest`                 | Usuario de RabbitMQ                                         |
+| `RABBITMQ_PASS`        | `guest`                 | Contraseña de RabbitMQ                                      |
+| `RABBITMQ_EXCHANGE`    | `bio.library.exchange`  | Exchange donde se publican eventos                          |
+| `RABBITMQ_ROUTING_KEY` | `loan.event`            | Routing key de los eventos                                  |
 
 ---
 
 ## Swagger / API Docs
 
-| Recurso | URL |
-|---|---|
-| Swagger UI | `http://localhost:8083/swagger-ui.html` |
-| OpenAPI JSON | `http://localhost:8083/v3/api-docs` |
+| Recurso      | URL                                     |
+| ------------ | --------------------------------------- |
+| Swagger UI   | `http://localhost:8083/swagger-ui.html` |
+| OpenAPI JSON | `http://localhost:8083/v3/api-docs`     |
 
 ---
 
@@ -261,18 +261,18 @@ Cada regla de negocio está encapsulada en su propia clase que implementa la int
 
 **Reglas de creación (`ILoanCreationRule`):**
 
-| Estrategia | Orden | Regla |
-|---|---|---|
-| `GpaLoanCreationRule` | 1 | Si `gpa < 3.2` y el estudiante ya tiene ≥ 1 préstamo activo, bloquea → 422 |
+| Estrategia            | Orden | Regla                                                                      |
+| --------------------- | ----- | -------------------------------------------------------------------------- |
+| `GpaLoanCreationRule` | 1     | Si `gpa < 3.2` y el estudiante ya tiene ≥ 1 préstamo activo, bloquea → 422 |
 
 > La validación de sanción se ejecuta antes de las reglas, directamente en el `LoanUseCase` vía Feign al user service → 403.
 
 **Reglas de devolución (`ILoanReturnRule`):**
 
-| Estrategia | Orden | Regla |
-|---|---|---|
-| `LoanOwnershipReturnRule` | 1 | Solo el estudiante dueño del préstamo puede devolverlo |
-| `LoanActiveStateReturnRule` | 2 | Un préstamo ya devuelto no puede devolverse de nuevo |
+| Estrategia                  | Orden | Regla                                                  |
+| --------------------------- | ----- | ------------------------------------------------------ |
+| `LoanOwnershipReturnRule`   | 1     | Solo el estudiante dueño del préstamo puede devolverlo |
+| `LoanActiveStateReturnRule` | 2     | Un préstamo ya devuelto no puede devolverse de nuevo   |
 
 ---
 
@@ -284,19 +284,19 @@ Cada regla de negocio está encapsulada en su propia clase que implementa la int
 
 ### Builder — Transiciones de estado del Loan
 
-| Método | Transición |
-|---|---|
-| `withUsed()` | `hasUsed → true` |
+| Método           | Transición                        |
+| ---------------- | --------------------------------- |
+| `withUsed()`     | `hasUsed → true`                  |
 | `withReturned()` | `active → false`, `endDate → hoy` |
 
 ---
 
 ### Adapter — Conversión entre dominio e infraestructura
 
-| Adaptador | Puerto | Tecnología |
-|---|---|---|
-| `LoanPersistenceAdapter` | `ILoanPersistencePort` | Spring Data JPA + PostgreSQL |
-| `CatalogFeignClientAdapter` | `ICatalogFeignClientPort` | OpenFeign → `catalog:8082` |
-| `UserFeignClientAdapter` | `IUserFeignClientPort` | OpenFeign → `user:8080` |
-| `NotificationRabbitMqAdapter` | `INotificationPort` | Spring AMQP → RabbitMQ |
-| `JwtAdapter` | `IJwtPort` | JJWT 0.11.5 |
+| Adaptador                     | Puerto                    | Tecnología                   |
+| ----------------------------- | ------------------------- | ---------------------------- |
+| `LoanPersistenceAdapter`      | `ILoanPersistencePort`    | Spring Data JPA + PostgreSQL |
+| `CatalogFeignClientAdapter`   | `ICatalogFeignClientPort` | OpenFeign → `catalog:8082`   |
+| `UserFeignClientAdapter`      | `IUserFeignClientPort`    | OpenFeign → `user:8080`      |
+| `NotificationRabbitMqAdapter` | `INotificationPort`       | Spring AMQP → RabbitMQ       |
+| `JwtAdapter`                  | `IJwtPort`                | JJWT 0.11.5                  |

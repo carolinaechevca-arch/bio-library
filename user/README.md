@@ -14,19 +14,19 @@ Sus responsabilidades son:
 
 ## Stack tecnológico
 
-| Tecnología | Versión |
-|---|---|
-| Java | 21 |
-| Spring Boot | 3.4.3 |
-| Spring Security | — |
-| JWT (JJWT) | 0.11.5 |
-| Spring Cloud OpenFeign | 2024.0.0 |
-| Spring Data JPA | — |
-| PostgreSQL | — |
-| MapStruct | 1.6.3 |
-| Lombok | 1.18.36 |
-| SpringDoc OpenAPI (Swagger) | 2.8.4 |
-| Gradle | — |
+| Tecnología                  | Versión  |
+| --------------------------- | -------- |
+| Java                        | 21       |
+| Spring Boot                 | 3.4.3    |
+| Spring Security             | —        |
+| JWT (JJWT)                  | 0.11.5   |
+| Spring Cloud OpenFeign      | 2024.0.0 |
+| Spring Data JPA             | —        |
+| PostgreSQL                  | —        |
+| MapStruct                   | 1.6.3    |
+| Lombok                      | 1.18.36  |
+| SpringDoc OpenAPI (Swagger) | 2.8.4    |
+| Gradle                      | —        |
 
 ---
 
@@ -55,8 +55,10 @@ driving (entrada)
 ```
 
 **Roles:**
-- `ADMIN` — puede registrar estudiantes.
+- `ADMIN` — acceso a gestión de estudiantes (`GET /students`, `GET /students/{id}`, `PATCH /students/{id}/sanction`).
 - `STUDENT` — acceso a recursos del sistema de préstamos (otros micros).
+
+> `POST /api/v1/students/create` es una ruta pública — no requiere ningún rol.
 
 ---
 
@@ -92,10 +94,10 @@ Autentica un usuario y retorna un JWT.
 }
 ```
 
-| Campo | Tipo | Requerido | Restricciones |
-|---|---|---|---|
-| `email` | String | Sí | Formato email válido, máx 200 caracteres |
-| `password` | String | Sí | 8–100 caracteres |
+| Campo      | Tipo   | Requerido | Restricciones                            |
+| ---------- | ------ | --------- | ---------------------------------------- |
+| `email`    | String | Sí        | Formato email válido, máx 200 caracteres |
+| `password` | String | Sí        | 8–100 caracteres                         |
 
 **Curl**
 
@@ -213,12 +215,12 @@ Lista paginada de estudiantes de la **misma universidad del admin autenticado** 
 
 **Query params**
 
-| Parámetro | Tipo | Requerido | Default | Descripción |
-|---|---|---|---|---|
-| `page` | Integer | No | `0` | Número de página (0-based) |
-| `size` | Integer | No | `10` | Elementos por página |
-| `sortBy` | String | No | `carnet` | Campo de ordenamiento: `carnet`, `gpa`, `user.name`, `user.lastName` |
-| `sortDir` | String | No | `asc` | Dirección: `asc` o `desc` |
+| Parámetro | Tipo    | Requerido | Default  | Descripción                                                          |
+| --------- | ------- | --------- | -------- | -------------------------------------------------------------------- |
+| `page`    | Integer | No        | `0`      | Número de página (0-based)                                           |
+| `size`    | Integer | No        | `10`     | Elementos por página                                                 |
+| `sortBy`  | String  | No        | `carnet` | Campo de ordenamiento: `carnet`, `gpa`, `user.name`, `user.lastName` |
+| `sortDir` | String  | No        | `asc`    | Dirección: `asc` o `desc`                                            |
 
 > La universidad no se filtra como parámetro — se toma automáticamente del email del admin en el token JWT.
 
@@ -304,10 +306,10 @@ Aplica o levanta una sanción sobre un estudiante. Requiere rol **ADMIN**.
 }
 ```
 
-| Campo | Tipo | Requerido | Descripción |
-|---|---|---|---|
-| `active` | Boolean | Sí | `true` aplica la sanción, `false` la levanta |
-| `sanctionEndDate` | LocalDate | No | Fecha de fin (`YYYY-MM-DD`). Se ignora (limpia) cuando `active=false` |
+| Campo             | Tipo      | Requerido | Descripción                                                           |
+| ----------------- | --------- | --------- | --------------------------------------------------------------------- |
+| `active`          | Boolean   | Sí        | `true` aplica la sanción, `false` la levanta                          |
+| `sanctionEndDate` | LocalDate | No        | Fecha de fin (`YYYY-MM-DD`). Se ignora (limpia) cuando `active=false` |
 
 > La sanción se levanta automáticamente al día siguiente de `sanctionEndDate`. El job de sanciones corre cada 5 minutos y elimina las sanciones donde `sanctionEndDate < hoy`.
 
@@ -344,7 +346,7 @@ curl -X PATCH "http://localhost:8080/api/v1/students/1/sanction" \
 
 ### POST `/api/v1/students/create`
 
-Registra un nuevo estudiante. Requiere rol **ADMIN**.
+Registra un nuevo estudiante. **No requiere autenticación** — es una ruta pública tanto en el API gateway como en la configuración de Spring Security del servicio (`PUBLIC_ENDPOINTS`).
 
 **Request Body**
 
@@ -359,14 +361,14 @@ Registra un nuevo estudiante. Requiere rol **ADMIN**.
 }
 ```
 
-| Campo | Tipo | Requerido | Restricciones |
-|---|---|---|---|
-| `carnet` | String | Sí | Debe existir en el sistema universitario |
-| `dni` | String | Sí | Debe coincidir con el registro universitario |
-| `email` | String | Sí | Debe pertenecer al dominio de la universidad y coincidir con el registro |
-| `password` | String | Sí | 8–100 caracteres |
-| `phoneNumber` | String | Sí | — |
-| `university` | String | Sí | Valor del enum `University` (ver tabla de universidades) |
+| Campo         | Tipo   | Requerido | Restricciones                                                            |
+| ------------- | ------ | --------- | ------------------------------------------------------------------------ |
+| `carnet`      | String | Sí        | Debe existir en el sistema universitario                                 |
+| `dni`         | String | Sí        | Debe coincidir con el registro universitario                             |
+| `email`       | String | Sí        | Debe pertenecer al dominio de la universidad y coincidir con el registro |
+| `password`    | String | Sí        | 8–100 caracteres                                                         |
+| `phoneNumber` | String | Sí        | —                                                                        |
+| `university`  | String | Sí        | Valor del enum `University` (ver tabla de universidades)                 |
 
 
 **Curl**
@@ -415,28 +417,6 @@ curl -X POST "http://localhost:8080/api/v1/students/create" \
 }
 ```
 
-**Response 401 — Autenticación requerida**
-
-```json
-{
-  "message": "Authentication is required to access this resource.",
-  "status": "Unauthorized",
-  "timestamp": "2026-05-11T10:30:00",
-  "code": 401
-}
-```
-
-**Response 403 — Permisos insuficientes**
-
-```json
-{
-  "message": "You do not have the necessary permissions to perform this action.",
-  "status": "Forbidden",
-  "timestamp": "2026-05-11T10:30:00",
-  "code": 403
-}
-```
-
 **Response 409 — Estudiante ya existe**
 
 ```json
@@ -467,35 +447,35 @@ curl -X POST "http://localhost:8080/api/v1/students/create" \
 
 Valores válidos para el campo `university`:
 
-| Enum | Dominio de email |
-|---|---|
-| `UNIVERSIDAD_NACIONAL` | unacional.edu.co |
-| `UNIVERSIDAD_DE_ANTIOQUIA` | udea.edu.co |
-| `UNIVERSIDAD_EAFIT` | eafit.edu.co |
-| `UNIVERSIDAD_DE_LOS_ANDES` | uniandes.edu.co |
-| `UNIVERSIDAD_PONTIFICIA_BOLIVARIANA` | upb.edu.co |
-| `ITM` | itm.edu.co |
-| `PASCUAL_BRAVO` | pascualbravo.edu.co |
-| `COLMAYOR` | colmayor.edu.co |
-| `UNIREMINGTON` | uniremington.edu.co |
-| `UNIVERSIDAD_DE_MEDELLIN` | udem.edu.co |
-| `UNIVERSIDAD_CES` | ces.edu.co |
+| Enum                                 | Dominio de email    |
+| ------------------------------------ | ------------------- |
+| `UNIVERSIDAD_NACIONAL`               | unacional.edu.co    |
+| `UNIVERSIDAD_DE_ANTIOQUIA`           | udea.edu.co         |
+| `UNIVERSIDAD_EAFIT`                  | eafit.edu.co        |
+| `UNIVERSIDAD_DE_LOS_ANDES`           | uniandes.edu.co     |
+| `UNIVERSIDAD_PONTIFICIA_BOLIVARIANA` | upb.edu.co          |
+| `ITM`                                | itm.edu.co          |
+| `PASCUAL_BRAVO`                      | pascualbravo.edu.co |
+| `COLMAYOR`                           | colmayor.edu.co     |
+| `UNIREMINGTON`                       | uniremington.edu.co |
+| `UNIVERSIDAD_DE_MEDELLIN`            | udem.edu.co         |
+| `UNIVERSIDAD_CES`                    | ces.edu.co          |
 
 ---
 
 ## Variables de entorno
 
-| Variable | Default | Descripción |
-|---|---|---|
-| `SERVER_PORT` | `8080` | Puerto HTTP del servidor |
-| `DB_HOST` | `localhost` | Host de PostgreSQL |
-| `DB_PORT` | `5432` | Puerto de PostgreSQL |
-| `DB_USERNAME` | `postgres` | Usuario de PostgreSQL |
-| `DB_PASSWORD` | `postgres` | Contraseña de PostgreSQL |
-| `DB_SCHEMA` | `users` | Schema donde se crean las tablas |
-| `JWT_SECRET` | `586B633A...` | Clave secreta para firmar los JWT (HMAC-SHA256) |
-| `JWT_EXPIRATION` | `3600000` | Tiempo de expiración del token en milisegundos (1 hora) |
-| `UNIVERSITY_MOCK_URL` | `http://localhost:8081` | URL base del microservicio `university-mock` |
+| Variable              | Default                 | Descripción                                             |
+| --------------------- | ----------------------- | ------------------------------------------------------- |
+| `SERVER_PORT`         | `8080`                  | Puerto HTTP del servidor                                |
+| `DB_HOST`             | `localhost`             | Host de PostgreSQL                                      |
+| `DB_PORT`             | `5432`                  | Puerto de PostgreSQL                                    |
+| `DB_USERNAME`         | `postgres`              | Usuario de PostgreSQL                                   |
+| `DB_PASSWORD`         | `postgres`              | Contraseña de PostgreSQL                                |
+| `DB_SCHEMA`           | `users`                 | Schema donde se crean las tablas                        |
+| `JWT_SECRET`          | `586B633A...`           | Clave secreta para firmar los JWT (HMAC-SHA256)         |
+| `JWT_EXPIRATION`      | `3600000`               | Tiempo de expiración del token en milisegundos (1 hora) |
+| `UNIVERSITY_MOCK_URL` | `http://localhost:8081` | URL base del microservicio `university-mock`            |
 
 > En producción siempre sobreescribir `JWT_SECRET` con un valor seguro generado aleatoriamente.
 
@@ -505,19 +485,19 @@ Valores válidos para el campo `university`:
 
 Al iniciar la aplicación se crean automáticamente **11 usuarios ADMIN**, uno por universidad:
 
-| Email | Universidad |
-|---|---|
-| admin@unacional.edu.co | UNIVERSIDAD_NACIONAL |
-| admin@udea.edu.co | UNIVERSIDAD_DE_ANTIOQUIA |
-| admin@eafit.edu.co | UNIVERSIDAD_EAFIT |
-| admin@uniandes.edu.co | UNIVERSIDAD_DE_LOS_ANDES |
-| admin@upb.edu.co | UNIVERSIDAD_PONTIFICIA_BOLIVARIANA |
-| admin@itm.edu.co | ITM |
-| admin@pascualbravo.edu.co | PASCUAL_BRAVO |
-| admin@colmayor.edu.co | COLMAYOR |
-| admin@uniremington.edu.co | UNIREMINGTON |
-| admin@udem.edu.co | UNIVERSIDAD_DE_MEDELLIN |
-| admin@ces.edu.co | UNIVERSIDAD_CES |
+| Email                     | Universidad                        |
+| ------------------------- | ---------------------------------- |
+| admin@unacional.edu.co    | UNIVERSIDAD_NACIONAL               |
+| admin@udea.edu.co         | UNIVERSIDAD_DE_ANTIOQUIA           |
+| admin@eafit.edu.co        | UNIVERSIDAD_EAFIT                  |
+| admin@uniandes.edu.co     | UNIVERSIDAD_DE_LOS_ANDES           |
+| admin@upb.edu.co          | UNIVERSIDAD_PONTIFICIA_BOLIVARIANA |
+| admin@itm.edu.co          | ITM                                |
+| admin@pascualbravo.edu.co | PASCUAL_BRAVO                      |
+| admin@colmayor.edu.co     | COLMAYOR                           |
+| admin@uniremington.edu.co | UNIREMINGTON                       |
+| admin@udem.edu.co         | UNIVERSIDAD_DE_MEDELLIN            |
+| admin@ces.edu.co          | UNIVERSIDAD_CES                    |
 
 **Contraseña por defecto de todos:** `password123`
 
@@ -545,10 +525,10 @@ SERVER_PORT=8082 JWT_SECRET=mi-clave-segura UNIVERSITY_MOCK_URL=http://universit
 
 Una vez levantado el servicio:
 
-| Recurso | URL |
-|---|---|
-| Swagger UI | `http://localhost:8080/swagger-ui.html` |
-| OpenAPI JSON | `http://localhost:8080/v3/api-docs` |
+| Recurso      | URL                                     |
+| ------------ | --------------------------------------- |
+| Swagger UI   | `http://localhost:8080/swagger-ui.html` |
+| OpenAPI JSON | `http://localhost:8080/v3/api-docs`     |
 
 Los endpoints protegidos requieren agregar el JWT en Swagger UI mediante el botón **Authorize** usando el esquema `Bearer <token>`.
 
@@ -562,12 +542,12 @@ Los endpoints protegidos requieren agregar el JWT en Swagger UI mediante el bot�
 
 Cada regla de negocio que debe verificarse al registrar un estudiante está encapsulada en su propia clase que implementa `StudentValidationStrategy`:
 
-| Estrategia | Orden | Regla |
-|---|---|---|
-| `EmailDomainValidationStrategy` | 1 | El email pertenece al dominio de la universidad seleccionada |
-| `DniValidationStrategy` | 2 | El DNI del request coincide con el registrado en `university-mock` |
-| `EmailMatchValidationStrategy` | 3 | El email del request coincide con el registrado en `university-mock` |
-| `EnrollmentValidationStrategy` | 4 | El estudiante tiene matrícula activa en `university-mock` |
+| Estrategia                      | Orden | Regla                                                                |
+| ------------------------------- | ----- | -------------------------------------------------------------------- |
+| `EmailDomainValidationStrategy` | 1     | El email pertenece al dominio de la universidad seleccionada         |
+| `DniValidationStrategy`         | 2     | El DNI del request coincide con el registrado en `university-mock`   |
+| `EmailMatchValidationStrategy`  | 3     | El email del request coincide con el registrado en `university-mock` |
+| `EnrollmentValidationStrategy`  | 4     | El estudiante tiene matrícula activa en `university-mock`            |
 
 Cada estrategia es un `@Component` de Spring. El `StudentUseCase` recibe `List<StudentValidationStrategy>` por inyección y ejecuta todas con `strategies.forEach(s -> s.validate(student, uniData))`.
 

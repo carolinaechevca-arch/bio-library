@@ -8,29 +8,31 @@ Punto de entrada único del sistema Bio Library. Centraliza seguridad JWT, CORS 
 
 ## Responsabilidades
 
-| Responsabilidad | Detalle |
-|-----------------|---------|
-| **Enrutamiento** | Redirige cada ruta al microservicio correspondiente |
-| **Autenticación JWT** | Valida el token en cada petición protegida antes de enrutar |
-| **Headers de contexto** | Inyecta `X-User-Id`, `X-User-Email`, `X-User-Role`, `X-User-Gpa` en la petición downstream |
-| **CORS centralizado** | Única configuración CORS para todos los orígenes y métodos |
-| **Bloqueo de rutas internas** | Las rutas `/api/v1/internal/**` devuelven 403 desde el gateway |
-| **Logging de tráfico** | Loguea método, path, status y tiempo de respuesta de cada petición |
+| Responsabilidad               | Detalle                                                                                    |
+| ----------------------------- | ------------------------------------------------------------------------------------------ |
+| **Enrutamiento**              | Redirige cada ruta al microservicio correspondiente                                        |
+| **Autenticación JWT**         | Valida el token en cada petición protegida antes de enrutar                                |
+| **Headers de contexto**       | Inyecta `X-User-Id`, `X-User-Email`, `X-User-Role`, `X-User-Gpa` en la petición downstream |
+| **CORS centralizado**         | Única configuración CORS para todos los orígenes y métodos                                 |
+| **Bloqueo de rutas internas** | Las rutas `/api/v1/internal/**` devuelven 403 desde el gateway                             |
+| **Logging de tráfico**        | Loguea método, path, status y tiempo de respuesta de cada petición                         |
 
 ## Rutas expuestas
 
-| Ruta del Gateway              | Microservicio destino | Puerto |
-|-------------------------------|-----------------------|--------|
-| `/api/v1/auth/**`             | user                  | 8080   |
-| `/api/v1/students/**`         | user                  | 8080   |
-| `/api/v1/books/**`            | catalog               | 8082   |
-| `/api/v1/loans/**`            | loans                 | 8083   |
+| Ruta del Gateway      | Microservicio destino | Puerto |
+| --------------------- | --------------------- | ------ |
+| `/api/v1/auth/**`     | user                  | 8080   |
+| `/api/v1/students/**` | user                  | 8080   |
+| `/api/v1/books/**`    | catalog               | 8082   |
+| `/api/v1/loans/**`    | loans                 | 8083   |
 
 ### Rutas públicas (sin JWT)
 
-- `POST /api/v1/auth/login`
+- `/api/v1/auth/**` (toda la ruta auth, incluyendo `POST /api/v1/auth/login` y `GET /api/v1/auth/me`)
 - `POST /api/v1/students/create`
-- `GET  /actuator/health`
+- `/actuator/**`
+
+> El gateway no valida JWT para estas rutas. Los servicios downstream pueden aplicar su propia seguridad (el servicio `user` protege individualmente `/api/v1/auth/me` con Spring Security).
 
 ### Rutas bloqueadas (nunca expuestas al exterior)
 
@@ -83,22 +85,22 @@ RequestLoggingFilter  →  loguea status + tiempo de respuesta
 
 Cuando el JWT es válido, el gateway añade a la petición saliente:
 
-| Header          | Contenido                |
-|-----------------|--------------------------|
-| `X-User-Id`     | ID del usuario (Long)    |
-| `X-User-Email`  | Email del usuario        |
-| `X-User-Role`   | Rol (`STUDENT`, `ADMIN`) |
-| `X-User-Gpa`    | Promedio académico       |
+| Header         | Contenido                |
+| -------------- | ------------------------ |
+| `X-User-Id`    | ID del usuario (Long)    |
+| `X-User-Email` | Email del usuario        |
+| `X-User-Role`  | Rol (`STUDENT`, `ADMIN`) |
+| `X-User-Gpa`   | Promedio académico       |
 
 ## Variables de entorno
 
-| Variable           | Default                  | Descripción          |
-|--------------------|--------------------------|----------------------|
-| `SERVER_PORT`      | `8090`                   | Puerto del gateway   |
-| `JWT_SECRET`       | (secreto de desarrollo)  | Clave HMAC del JWT   |
-| `USER_URL`         | `http://localhost:8080`  | URL del user service |
-| `CATALOG_URL`      | `http://localhost:8082`  | URL del catalog      |
-| `LOANS_URL`        | `http://localhost:8083`  | URL del loans        |
+| Variable      | Default                 | Descripción          |
+| ------------- | ----------------------- | -------------------- |
+| `SERVER_PORT` | `8090`                  | Puerto del gateway   |
+| `JWT_SECRET`  | (secreto de desarrollo) | Clave HMAC del JWT   |
+| `USER_URL`    | `http://localhost:8080` | URL del user service |
+| `CATALOG_URL` | `http://localhost:8082` | URL del catalog      |
+| `LOANS_URL`   | `http://localhost:8083` | URL del loans        |
 
 ## Respuestas de error del gateway
 

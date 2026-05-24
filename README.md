@@ -4,14 +4,14 @@ Sistema de gestión de biblioteca universitaria basado en microservicios con arq
 
 ## Servicios
 
-| Servicio | Puerto | Descripción |
-|---|---|---|
-| api-gateway | 8090 | Punto de entrada único — enruta y valida JWT |
-| user | 8080 | Autenticación y gestión de estudiantes |
-| university-mock | 8081 | Mock del sistema universitario |
-| catalog | 8082 | Catálogo de libros (MongoDB) |
-| loans | 8083 | Gestión de préstamos |
-| notification | 8084 | Notificaciones SMS vía Twilio (consume RabbitMQ) |
+| Servicio        | Puerto | Descripción                                      |
+| --------------- | ------ | ------------------------------------------------ |
+| api-gateway     | 8090   | Punto de entrada único — enruta y valida JWT     |
+| user            | 8080   | Autenticación y gestión de estudiantes           |
+| university-mock | 8081   | Mock del sistema universitario                   |
+| catalog         | 8082   | Catálogo de libros (MongoDB)                     |
+| loans           | 8083   | Gestión de préstamos                             |
+| notification    | 8084   | Notificaciones SMS vía Twilio (consume RabbitMQ) |
 
 **Infraestructura incluida:** PostgreSQL · MongoDB · RabbitMQ · Prometheus · Grafana · Jaeger
 
@@ -34,13 +34,13 @@ cp .env.example .env
 
 Variables obligatorias a configurar en `.env`:
 
-| Variable | Descripción |
-|---|---|
-| `POSTGRES_PASSWORD` | Contraseña de PostgreSQL |
-| `RABBITMQ_PASS` | Contraseña de RabbitMQ |
-| `JWT_SECRET` | Clave HMAC para firmar tokens |
-| `TWILIO_ACCOUNT_SID` | Account SID de Twilio (para SMS) |
-| `TWILIO_AUTH_TOKEN` | Auth Token de Twilio |
+| Variable              | Descripción                                    |
+| --------------------- | ---------------------------------------------- |
+| `POSTGRES_PASSWORD`   | Contraseña de PostgreSQL                       |
+| `RABBITMQ_PASS`       | Contraseña de RabbitMQ                         |
+| `JWT_SECRET`          | Clave HMAC para firmar tokens                  |
+| `TWILIO_ACCOUNT_SID`  | Account SID de Twilio (para SMS)               |
+| `TWILIO_AUTH_TOKEN`   | Auth Token de Twilio                           |
 | `TWILIO_PHONE_NUMBER` | Número Twilio en formato E.164 (`+1234567890`) |
 
 > Si no tienes credenciales de Twilio, las notificaciones SMS se omiten pero el sistema funciona correctamente.
@@ -105,29 +105,29 @@ docker compose up -d loans
 
 ### Aplicación
 
-| Recurso | URL |
-|---|---|
-| API Gateway (entrada principal) | http://localhost:8090 |
-| RabbitMQ Management UI | http://localhost:15672 (guest/guest) |
-| Swagger user | http://localhost:8080/swagger-ui.html |
-| Swagger catalog | http://localhost:8082/swagger-ui.html |
-| Swagger loans | http://localhost:8083/swagger-ui.html |
-| Swagger university-mock | http://localhost:8081/swagger-ui.html |
-| Health gateway | http://localhost:8090/actuator/health |
+| Recurso                         | URL                                   |
+| ------------------------------- | ------------------------------------- |
+| API Gateway (entrada principal) | http://localhost:8090                 |
+| RabbitMQ Management UI          | http://localhost:15672 (guest/guest)  |
+| Swagger user                    | http://localhost:8080/swagger-ui.html |
+| Swagger catalog                 | http://localhost:8082/swagger-ui.html |
+| Swagger loans                   | http://localhost:8083/swagger-ui.html |
+| Swagger university-mock         | http://localhost:8081/swagger-ui.html |
+| Health gateway                  | http://localhost:8090/actuator/health |
 
 ### Observabilidad
 
-| Recurso | URL | Credenciales |
-|---|---|---|
-| Prometheus | http://localhost:9090 | — |
-| Grafana | http://localhost:3001 | admin / admin |
-| Jaeger (trazas) | http://localhost:16686 | — |
+| Recurso         | URL                    | Credenciales  |
+| --------------- | ---------------------- | ------------- |
+| Prometheus      | http://localhost:9090  | —             |
+| Grafana         | http://localhost:3001  | admin / admin |
+| Jaeger (trazas) | http://localhost:16686 | —             |
 
 ---
 
 ## Flujo de prueba
 
-1. **Registrar estudiante** (requiere token ADMIN)
+1. **Registrar estudiante** (endpoint público, no requiere token)
    ```
    POST http://localhost:8090/api/v1/students/create
    ```

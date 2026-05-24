@@ -42,102 +42,105 @@ import org.springframework.web.bind.annotation.RestController;
 @SecurityRequirement(name = "bearerAuth")
 public class LoanController {
 
-    private final ILoanServicePort servicePort;
-    private final ILoanRestMapper restMapper;
+        private final ILoanServicePort servicePort;
+        private final ILoanRestMapper restMapper;
 
-    @Operation(summary = "Request a book loan (student only)")
-    @PostMapping
-    public ResponseEntity<LoanResponse> createLoan(
-            @RequestBody @Valid LoanRequest request,
-            Authentication authentication) {
-        LoanUserPrincipal principal = (LoanUserPrincipal) authentication.getPrincipal();
-        log.info("[REST] POST loan studentId={} bookId={}", principal.id(), request.bookId());
-        Loan loan = servicePort.createLoan(request.bookId(), principal.id(), principal.gpa(), principal.email());
-        return ResponseEntity.status(HttpStatus.CREATED).body(restMapper.toResponse(loan));
-    }
+        @Operation(summary = "Request a book loan (student only)")
+        @ApiResponses({
+                        @ApiResponse(responseCode = "201", description = "Loan created", content = @Content(schema = @Schema(implementation = LoanResponse.class))),
+                        @ApiResponse(responseCode = "400", description = "Validation error — bookId required", content = @Content(schema = @Schema(implementation = com.bio_library.loans.infrastructure.configuration.exceptionhandler.ExceptionResponse.class))),
+                        @ApiResponse(responseCode = "401", description = "Token missing or expired", content = @Content(schema = @Schema(implementation = com.bio_library.loans.infrastructure.configuration.exceptionhandler.ExceptionResponse.class))),
+                        @ApiResponse(responseCode = "403", description = "Student has an active sanction", content = @Content(schema = @Schema(implementation = com.bio_library.loans.infrastructure.configuration.exceptionhandler.ExceptionResponse.class))),
+                        @ApiResponse(responseCode = "404", description = "Book not found in catalog", content = @Content(schema = @Schema(implementation = com.bio_library.loans.infrastructure.configuration.exceptionhandler.ExceptionResponse.class))),
+                        @ApiResponse(responseCode = "422", description = "No licenses available or GPA < 3.2 with active loan", content = @Content(schema = @Schema(implementation = com.bio_library.loans.infrastructure.configuration.exceptionhandler.ExceptionResponse.class)))
+        })
+        @PostMapping
+        public ResponseEntity<LoanResponse> createLoan(
+                        @RequestBody @Valid LoanRequest request,
+                        Authentication authentication) {
+                LoanUserPrincipal principal = (LoanUserPrincipal) authentication.getPrincipal();
+                log.info("[REST] POST loan studentId={} bookId={}", principal.id(), request.bookId());
+                Loan loan = servicePort.createLoan(request.bookId(), principal.id(), principal.gpa(),
+                                principal.email());
+                return ResponseEntity.status(HttpStatus.CREATED).body(restMapper.toResponse(loan));
+        }
 
-    @Operation(summary = "Mark loan book as used")
-    @PatchMapping("/{id}/mark-used")
-    public ResponseEntity<LoanResponse> markAsUsed(@PathVariable Long id) {
-        log.info("[REST] PATCH mark-used loanId={}", id);
-        return ResponseEntity.ok(restMapper.toResponse(servicePort.markAsUsed(id)));
-    }
+        @Operation(summary = "Mark loan book as used")
+        @ApiResponses({
+                        @ApiResponse(responseCode = "200", description = "Loan updated with hasUsed=true", content = @Content(schema = @Schema(implementation = LoanResponse.class))),
+                        @ApiResponse(responseCode = "401", description = "Token missing or expired", content = @Content(schema = @Schema(implementation = com.bio_library.loans.infrastructure.configuration.exceptionhandler.ExceptionResponse.class))),
+                        @ApiResponse(responseCode = "404", description = "Loan not found", content = @Content(schema = @Schema(implementation = com.bio_library.loans.infrastructure.configuration.exceptionhandler.ExceptionResponse.class)))
+        })
+        @PatchMapping("/{id}/mark-used")
+        public ResponseEntity<LoanResponse> markAsUsed(@PathVariable Long id) {
+                log.info("[REST] PATCH mark-used loanId={}", id);
+                return ResponseEntity.ok(restMapper.toResponse(servicePort.markAsUsed(id)));
+        }
 
-    @Operation(summary = "Return a borrowed book and release the license")
-    @PatchMapping("/{id}/return")
-    public ResponseEntity<LoanResponse> returnLoan(
-            @PathVariable Long id,
-            Authentication authentication) {
-        LoanUserPrincipal principal = (LoanUserPrincipal) authentication.getPrincipal();
-        log.info("[REST] PATCH return loanId={} studentId={}", id, principal.id());
-        return ResponseEntity.ok(restMapper.toResponse(servicePort.returnLoan(id, principal.id(), principal.email())));
-    }
+        @Operation(summary = "Return a borrowed book and release the license")
+        @ApiResponses({
+                        @ApiResponse(responseCode = "200", description = "Loan closed, license released", content = @Content(schema = @Schema(implementation = LoanResponse.class))),
+                        @ApiResponse(responseCode = "401", description = "Token missing or expired", content = @Content(schema = @Schema(implementation = com.bio_library.loans.infrastructure.configuration.exceptionhandler.ExceptionResponse.class))),
+                        @ApiResponse(responseCode = "403", description = "Loan does not belong to the authenticated student", content = @Content(schema = @Schema(implementation = com.bio_library.loans.infrastructure.configuration.exceptionhandler.ExceptionResponse.class))),
+                        @ApiResponse(responseCode = "404", description = "Loan not found", content = @Content(schema = @Schema(implementation = com.bio_library.loans.infrastructure.configuration.exceptionhandler.ExceptionResponse.class))),
+                        @ApiResponse(responseCode = "409", description = "Loan already returned", content = @Content(schema = @Schema(implementation = com.bio_library.loans.infrastructure.configuration.exceptionhandler.ExceptionResponse.class)))
+        })
+        @PatchMapping("/{id}/return")
+        public ResponseEntity<LoanResponse> returnLoan(
+                        @PathVariable Long id,
+                        Authentication authentication) {
+                LoanUserPrincipal principal = (LoanUserPrincipal) authentication.getPrincipal();
+                log.info("[REST] PATCH return loanId={} studentId={}", id, principal.id());
+                return ResponseEntity.ok(
+                                restMapper.toResponse(servicePort.returnLoan(id, principal.id(), principal.email())));
+        }
 
-    @Operation(
-            summary = "List my loans",
-            description = "Returns a paginated list of the authenticated student's loans, optionally filtered by status."
-    )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Paginated list of loans"),
-            @ApiResponse(responseCode = "401", description = "Authentication required",
-                    content = @Content(schema = @Schema(implementation = com.bio_library.loans.infrastructure.configuration.exceptionhandler.ExceptionResponse.class)))
-    })
-    @GetMapping("/my-loans")
-    public ResponseEntity<Page<LoanResponse>> getMyLoans(
-            @Parameter(description = "Filter by loan status: true = active, false = returned, omit = all")
-            @RequestParam(required = false) Boolean active,
-            @Parameter(description = "Page number (0-based)", example = "0")
-            @RequestParam(defaultValue = "0") int page,
-            @Parameter(description = "Page size", example = "10")
-            @RequestParam(defaultValue = "10") int size,
-            @Parameter(description = "Field to sort by (startDate, endDate, bookId)", example = "startDate")
-            @RequestParam(defaultValue = "startDate") String sortBy,
-            @Parameter(description = "Sort direction: asc or desc", example = "desc")
-            @RequestParam(defaultValue = "desc") String sortDir,
-            Authentication authentication) {
+        @Operation(summary = "List my loans", description = "Returns a paginated list of the authenticated student's loans, optionally filtered by status.")
+        @ApiResponses({
+                        @ApiResponse(responseCode = "200", description = "Paginated list of loans"),
+                        @ApiResponse(responseCode = "401", description = "Authentication required", content = @Content(schema = @Schema(implementation = com.bio_library.loans.infrastructure.configuration.exceptionhandler.ExceptionResponse.class)))
+        })
+        @GetMapping("/my-loans")
+        public ResponseEntity<Page<LoanResponse>> getMyLoans(
+                        @Parameter(description = "Filter by loan status: true = active, false = returned, omit = all") @RequestParam(required = false) Boolean active,
+                        @Parameter(description = "Page number (0-based)", example = "0") @RequestParam(defaultValue = "0") int page,
+                        @Parameter(description = "Page size", example = "10") @RequestParam(defaultValue = "10") int size,
+                        @Parameter(description = "Field to sort by (startDate, endDate, bookId)", example = "startDate") @RequestParam(defaultValue = "startDate") String sortBy,
+                        @Parameter(description = "Sort direction: asc or desc", example = "desc") @RequestParam(defaultValue = "desc") String sortDir,
+                        Authentication authentication) {
 
-        LoanUserPrincipal principal = (LoanUserPrincipal) authentication.getPrincipal();
-        log.info("[REST] GET /my-loans studentId={} active={} page={} size={} sortBy={} sortDir={}",
-                principal.id(), active, page, size, sortBy, sortDir);
+                LoanUserPrincipal principal = (LoanUserPrincipal) authentication.getPrincipal();
+                log.info("[REST] GET /my-loans studentId={} active={} page={} size={} sortBy={} sortDir={}",
+                                principal.id(), active, page, size, sortBy, sortDir);
 
-        Sort sort = Sort.by(sortDir.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC, sortBy);
-        Pageable pageable = PageRequest.of(page, size, sort);
-        return ResponseEntity.ok(servicePort.getLoansByStudentId(principal.id(), active, pageable)
-                .map(restMapper::toResponse));
-    }
+                Sort sort = Sort.by(sortDir.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC, sortBy);
+                Pageable pageable = PageRequest.of(page, size, sort);
+                return ResponseEntity.ok(servicePort.getLoansByStudentId(principal.id(), active, pageable)
+                                .map(restMapper::toResponse));
+        }
 
-    @Operation(
-            summary = "List loans by student (ADMIN only)",
-            description = "Returns a paginated list of loans for a specific student. Requires ADMIN role."
-    )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Paginated list of loans"),
-            @ApiResponse(responseCode = "401", description = "Authentication required",
-                    content = @Content(schema = @Schema(implementation = com.bio_library.loans.infrastructure.configuration.exceptionhandler.ExceptionResponse.class))),
-            @ApiResponse(responseCode = "403", description = "Insufficient permissions (ADMIN role required)",
-                    content = @Content(schema = @Schema(implementation = com.bio_library.loans.infrastructure.configuration.exceptionhandler.ExceptionResponse.class)))
-    })
-    @GetMapping("/student/{studentId}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Page<LoanResponse>> getLoansByStudent(
-            @PathVariable Long studentId,
-            @Parameter(description = "Filter by loan status: true = active, false = returned, omit = all")
-            @RequestParam(required = false) Boolean active,
-            @Parameter(description = "Page number (0-based)", example = "0")
-            @RequestParam(defaultValue = "0") int page,
-            @Parameter(description = "Page size", example = "10")
-            @RequestParam(defaultValue = "10") int size,
-            @Parameter(description = "Field to sort by (startDate, endDate, bookId)", example = "startDate")
-            @RequestParam(defaultValue = "startDate") String sortBy,
-            @Parameter(description = "Sort direction: asc or desc", example = "desc")
-            @RequestParam(defaultValue = "desc") String sortDir) {
+        @Operation(summary = "List loans by student (ADMIN only)", description = "Returns a paginated list of loans for a specific student. Requires ADMIN role.")
+        @ApiResponses({
+                        @ApiResponse(responseCode = "200", description = "Paginated list of loans"),
+                        @ApiResponse(responseCode = "401", description = "Authentication required", content = @Content(schema = @Schema(implementation = com.bio_library.loans.infrastructure.configuration.exceptionhandler.ExceptionResponse.class))),
+                        @ApiResponse(responseCode = "403", description = "Insufficient permissions (ADMIN role required)", content = @Content(schema = @Schema(implementation = com.bio_library.loans.infrastructure.configuration.exceptionhandler.ExceptionResponse.class)))
+        })
+        @GetMapping("/student/{studentId}")
+        @PreAuthorize("hasRole('ADMIN')")
+        public ResponseEntity<Page<LoanResponse>> getLoansByStudent(
+                        @PathVariable Long studentId,
+                        @Parameter(description = "Filter by loan status: true = active, false = returned, omit = all") @RequestParam(required = false) Boolean active,
+                        @Parameter(description = "Page number (0-based)", example = "0") @RequestParam(defaultValue = "0") int page,
+                        @Parameter(description = "Page size", example = "10") @RequestParam(defaultValue = "10") int size,
+                        @Parameter(description = "Field to sort by (startDate, endDate, bookId)", example = "startDate") @RequestParam(defaultValue = "startDate") String sortBy,
+                        @Parameter(description = "Sort direction: asc or desc", example = "desc") @RequestParam(defaultValue = "desc") String sortDir) {
 
-        log.info("[REST] GET /student/{} active={} page={} size={} sortBy={} sortDir={}",
-                studentId, active, page, size, sortBy, sortDir);
+                log.info("[REST] GET /student/{} active={} page={} size={} sortBy={} sortDir={}",
+                                studentId, active, page, size, sortBy, sortDir);
 
-        Sort sort = Sort.by(sortDir.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC, sortBy);
-        Pageable pageable = PageRequest.of(page, size, sort);
-        return ResponseEntity.ok(servicePort.getLoansByStudentId(studentId, active, pageable)
-                .map(restMapper::toResponse));
-    }
+                Sort sort = Sort.by(sortDir.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC, sortBy);
+                Pageable pageable = PageRequest.of(page, size, sort);
+                return ResponseEntity.ok(servicePort.getLoansByStudentId(studentId, active, pageable)
+                                .map(restMapper::toResponse));
+        }
 }
