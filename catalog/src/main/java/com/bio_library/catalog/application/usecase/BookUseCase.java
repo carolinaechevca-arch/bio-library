@@ -4,6 +4,7 @@ import com.bio_library.catalog.domain.constants.DomainConstants;
 import com.bio_library.catalog.domain.enums.Category;
 import com.bio_library.catalog.domain.enums.LoanAction;
 import com.bio_library.catalog.domain.exceptions.BookAlreadyExistsException;
+import com.bio_library.catalog.domain.exceptions.LoanLimitExceededException;
 import com.bio_library.catalog.domain.model.Book;
 import com.bio_library.catalog.domain.model.PageResult;
 import com.bio_library.catalog.application.ports.in.IBookServicePort;
@@ -34,6 +35,41 @@ public class BookUseCase implements IBookServicePort {
                 .build();
         Book saved = bookPersistencePort.save(toSave);
         log.info("[CREATE-SUCCESS] Book saved with id={}", saved.getId());
+        return saved;
+    }
+
+    @Override
+    public Book updateBook(String id, Book book) {
+        log.info("[UPDATE] Updating book id={} isbn={}", id, book.getIsbn());
+        Book existing = bookDomainService.validateBookExists(bookPersistencePort.findById(id), id);
+
+        Book isbnMatch = bookPersistencePort.findByIsbn(book.getIsbn());
+        if (isbnMatch != null && !isbnMatch.getId().equals(existing.getId())) {
+            throw new BookAlreadyExistsException(
+                    String.format(DomainConstants.BOOK_ALREADY_EXISTS, book.getIsbn()));
+        }
+
+        int activeLoans = existing.getTotalLicenses() - existing.getAvailableLicenses();
+        if (book.getTotalLicenses() < activeLoans) {
+            throw new LoanLimitExceededException(
+                    String.format(DomainConstants.TOTAL_LICENSES_BELOW_ACTIVE, activeLoans));
+        }
+
+        int availableLicenses = book.getTotalLicenses() - activeLoans;
+        Book updated = existing.toBuilder()
+                .isbn(book.getIsbn())
+                .title(book.getTitle())
+                .author(book.getAuthor())
+                .category(book.getCategory())
+                .description(book.getDescription())
+                .pdfUrl(book.getPdfUrl())
+                .imagenUrl(book.getImagenUrl())
+                .totalLicenses(book.getTotalLicenses())
+                .availableLicenses(availableLicenses)
+                .build();
+
+        Book saved = bookPersistencePort.save(updated);
+        log.info("[UPDATE-SUCCESS] Book updated id={}", saved.getId());
         return saved;
     }
 

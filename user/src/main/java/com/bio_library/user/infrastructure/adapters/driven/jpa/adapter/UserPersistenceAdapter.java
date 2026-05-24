@@ -2,7 +2,6 @@ package com.bio_library.user.infrastructure.adapters.driven.jpa.adapter;
 
 import com.bio_library.user.application.ports.out.IUserPersistencePort;
 import com.bio_library.user.domain.model.User;
-import com.bio_library.user.infrastructure.adapters.driven.jpa.entity.UserEntity;
 import com.bio_library.user.infrastructure.adapters.driven.jpa.mapper.IUserEntityMapper;
 import com.bio_library.user.infrastructure.adapters.driven.jpa.repository.IUserRepository;
 import lombok.RequiredArgsConstructor;

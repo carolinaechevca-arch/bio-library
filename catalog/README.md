@@ -16,16 +16,16 @@ Sus responsabilidades son:
 
 ## Stack tecnológico
 
-| Tecnología | Versión |
-|---|---|
-| Java | 21 |
-| Spring Boot | 3.4.3 |
-| Spring Data MongoDB | — |
-| MongoDB | — |
-| MapStruct | 1.6.3 |
-| Lombok | — |
-| SpringDoc OpenAPI (Swagger) | 2.8.4 |
-| Gradle | — |
+| Tecnología                  | Versión |
+| --------------------------- | ------- |
+| Java                        | 21      |
+| Spring Boot                 | 3.4.3   |
+| Spring Data MongoDB         | —       |
+| MongoDB                     | —       |
+| MapStruct                   | 1.6.3   |
+| Lombok                      | —       |
+| SpringDoc OpenAPI (Swagger) | 2.8.4   |
+| Gradle                      | —       |
 
 ---
 
@@ -67,9 +67,9 @@ driving (entrada)
 }
 ```
 
-| Campo | Descripción |
-|---|---|
-| `totalLicenses` | Total de licencias concurrentes permitidas para el título |
+| Campo               | Descripción                                                               |
+| ------------------- | ------------------------------------------------------------------------- |
+| `totalLicenses`     | Total de licencias concurrentes permitidas para el título                 |
 | `availableLicenses` | Licencias disponibles en este momento (totalLicenses − préstamos activos) |
 
 ---
@@ -99,16 +99,16 @@ Crea un nuevo libro. `availableLicenses` se establece automáticamente igual a `
 }
 ```
 
-| Campo | Tipo | Requerido | Descripción |
-|---|---|---|---|
-| `isbn` | String | Sí | ISBN del libro (debe ser único) |
-| `title` | String | Sí | Título |
-| `author` | String | Sí | Nombre completo del autor |
-| `category` | Enum | Sí | Ver sección Enums |
-| `description` | String | Sí | Descripción del libro |
-| `pdfUrl` | String | Sí | URL del PDF |
-| `imagenUrl` | String | No | URL de la portada |
-| `totalLicenses` | int | Sí | Mínimo 1 |
+| Campo           | Tipo   | Requerido | Descripción                     |
+| --------------- | ------ | --------- | ------------------------------- |
+| `isbn`          | String | Sí        | ISBN del libro (debe ser único) |
+| `title`         | String | Sí        | Título                          |
+| `author`        | String | Sí        | Nombre completo del autor       |
+| `category`      | Enum   | Sí        | Ver sección Enums               |
+| `description`   | String | Sí        | Descripción del libro           |
+| `pdfUrl`        | String | Sí        | URL del PDF                     |
+| `imagenUrl`     | String | No        | URL de la portada               |
+| `totalLicenses` | int    | Sí        | Mínimo 1                        |
 
 **Response 201**
 
@@ -146,11 +146,11 @@ Retorna el catálogo paginado. Acepta filtro opcional por categoría.
 
 **Query Parameters**
 
-| Parámetro | Tipo | Default | Descripción |
-|---|---|---|---|
-| `category` | Enum | — | Filtra por categoría (opcional) |
-| `page` | int | `0` | Número de página (base 0) |
-| `size` | int | `10` | Registros por página |
+| Parámetro  | Tipo | Default | Descripción                     |
+| ---------- | ---- | ------- | ------------------------------- |
+| `category` | Enum | —       | Filtra por categoría (opcional) |
+| `page`     | int  | `0`     | Número de página (base 0)       |
+| `size`     | int  | `10`    | Registros por página            |
 
 **Curl — todos los libros**
 
@@ -260,6 +260,67 @@ curl "http://localhost:8082/api/v1/books/64a1b2c3d4e5f6a7b8c9d0e1"
 
 ---
 
+### PUT `/{id}`
+
+Edita un libro por su ID. Actualiza el recurso completo.
+
+**Reglas de negocio**
+
+- `isbn` debe ser unico.
+- `totalLicenses` no puede ser menor que los prestamos activos.
+- `availableLicenses` se recalcula como `totalLicenses - prestamosActivos`.
+
+**Request Body**
+
+```json
+{
+  "isbn": "9780132350884",
+  "title": "Clean Code: A Handbook of Agile Software Craftsmanship",
+  "author": "Robert C. Martin",
+  "category": "SOFTWARE_ENGINEERING",
+  "description": "Manual de buenas prácticas para escribir código limpio y mantenible.",
+  "pdfUrl": "https://www.example.com/clean-code.pdf",
+  "imagenUrl": "https://www.example.com/clean-code.jpg",
+  "totalLicenses": 6
+}
+```
+
+**Curl**
+
+```bash
+curl -X PUT "http://localhost:8082/api/v1/books/64a1b2c3d4e5f6a7b8c9d0e1" \
+  -H "Content-Type: application/json" \
+  -d '{"isbn":"9780132350884","title":"Clean Code: A Handbook of Agile Software Craftsmanship","author":"Robert C. Martin","category":"SOFTWARE_ENGINEERING","description":"Manual de buenas prácticas para escribir código limpio y mantenible.","pdfUrl":"https://www.example.com/clean-code.pdf","imagenUrl":"https://www.example.com/clean-code.jpg","totalLicenses":6}'
+```
+
+**Response 200** — esquema `BookResponse` completo.
+
+**Response 404** — mismo esquema que los demás 404.
+
+**Response 409 — ISBN duplicado**
+
+```json
+{
+  "message": "A book with isbn '9780132350884' already exists.",
+  "status": "Conflict",
+  "timestamp": "2026-05-16T22:00:00",
+  "statusCode": 409
+}
+```
+
+**Response 422 — totalLicenses menor que prestamos activos**
+
+```json
+{
+  "message": "totalLicenses cannot be lower than active loans (2).",
+  "status": "Unprocessable Entity",
+  "timestamp": "2026-05-16T22:00:00",
+  "statusCode": 422
+}
+```
+
+---
+
 ### DELETE `/{id}`
 
 Elimina un libro por su ID.
@@ -280,10 +341,10 @@ curl -X DELETE "http://localhost:8082/api/v1/books/64a1b2c3d4e5f6a7b8c9d0e1"
 
 Actualiza las licencias disponibles. Llamado internamente por el micro `loans` al crear o devolver un préstamo.
 
-| Acción | Efecto |
-|---|---|
+| Acción      | Efecto                                   |
+| ----------- | ---------------------------------------- |
 | `INCREMENT` | `availableLicenses - 1` (nuevo préstamo) |
-| `DECREMENT` | `availableLicenses + 1` (devolución) |
+| `DECREMENT` | `availableLicenses + 1` (devolución)     |
 
 **Request Body**
 
@@ -324,9 +385,9 @@ curl -X PATCH "http://localhost:8082/api/v1/books/64a1b2c3d4e5f6a7b8c9d0e1/loan-
 
 ## Variables de entorno
 
-| Variable | Default | Descripción |
-|---|---|---|
-| `SERVER_PORT` | `8082` | Puerto HTTP del servidor |
+| Variable      | Default                                | Descripción               |
+| ------------- | -------------------------------------- | ------------------------- |
+| `SERVER_PORT` | `8082`                                 | Puerto HTTP del servidor  |
 | `MONGODB_URI` | `mongodb://localhost:27017/biolibrary` | URI de conexión a MongoDB |
 
 ---
@@ -373,7 +434,7 @@ Expone `/actuator/prometheus` en el puerto `8082` para scraping con Prometheus.
 
 ## Swagger / API Docs
 
-| Recurso | URL |
-|---|---|
-| Swagger UI | `http://localhost:8082/swagger-ui.html` |
-| OpenAPI JSON | `http://localhost:8082/v3/api-docs` |
+| Recurso      | URL                                     |
+| ------------ | --------------------------------------- |
+| Swagger UI   | `http://localhost:8082/swagger-ui.html` |
+| OpenAPI JSON | `http://localhost:8082/v3/api-docs`     |

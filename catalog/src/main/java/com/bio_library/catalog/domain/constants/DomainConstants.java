@@ -11,6 +11,7 @@ public final class DomainConstants {
     public static final String BOOK_ALREADY_EXISTS = "A book with isbn '%s' already exists.";
     public static final String LOAN_LIMIT_EXCEEDED = "Book has no available licenses (total: %d).";
     public static final String LOAN_COUNT_ALREADY_FULL = "Book already has all licenses available.";
+    public static final String TOTAL_LICENSES_BELOW_ACTIVE = "totalLicenses cannot be lower than active loans (%d).";
 
     public static final String LOG_FIND_ALL = "[DB] Finding all books category={} page={} size={}";
     public static final String LOG_FIND_BY_ID = "[DB] Finding book by id={}";
