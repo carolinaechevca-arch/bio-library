@@ -8,6 +8,8 @@ spring:
     openfeign:
       okhttp:
         enabled: true
+      micrometer:
+        enabled: true
   datasource:
     url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/biolibrary
     username: ${DB_USERNAME:postgres}
@@ -58,3 +60,9 @@ management:
   endpoint:
     health:
       show-details: always
+  tracing:
+    sampling:
+      probability: 1.0
+  otlp:
+    tracing:
+      endpoint: http://jaeger:4318/v1/traces
