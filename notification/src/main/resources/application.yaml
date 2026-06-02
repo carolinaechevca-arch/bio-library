@@ -9,6 +9,9 @@ spring:
     port: ${RABBITMQ_PORT:5672}
     username: ${RABBITMQ_USER:guest}
     password: ${RABBITMQ_PASS:guest}
+    listener:
+      simple:
+        observation-enabled: true
 
 rabbitmq:
   exchange: ${RABBITMQ_EXCHANGE:bio.library.exchange}
